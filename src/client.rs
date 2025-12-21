@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ffi::CString;
 use std::hash::Hash;
 use std::slice;
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
@@ -22,7 +23,7 @@ use esp_idf_svc::bt::ble::gap::{
 use esp_idf_svc::bt::{BdAddr, Ble, BtDriver, BtStatus, BtUuid};
 use esp_idf_svc::sys::EspError;
 use log::{error, info, warn};
-use victron_ble::{DeviceState, Mode};
+use victron_ble::{DeviceState, ErrorState, Mode};
 
 use crate::devices::*;
 use crate::ui::{self, LAST_TOUCH, ON_DURATION};
@@ -277,6 +278,28 @@ impl Client {
                                     let lock = ui::SOLAR_WATTS.write();
                                     *(lock.unwrap()) =
                                         device_state.pv_power_w.unwrap_or(0_f32) as i32;
+
+                                    let lock = ui::SOLAR_YIELD.write();
+                                    *(lock.unwrap()) =
+                                        device_state.yield_today_kwh.unwrap_or(0_f32) as i32;
+
+                                    if device_state.mode != Mode::NotApplicable {
+                                        ui::SOLAR_MODE.write().unwrap().replace(
+                                            CString::new(format!("{}", device_state.mode)).unwrap(),
+                                        );
+                                    }
+
+                                    let cur_error = ui::SOLAR_ERROR.read().unwrap().is_some();
+                                    if device_state.error_state != ErrorState::NoError
+                                        && device_state.error_state != ErrorState::NotApplicable
+                                    {
+                                        ui::SOLAR_ERROR.write().unwrap().replace(
+                                            CString::new(format!("{}", device_state.error_state))
+                                                .unwrap(),
+                                        );
+                                    } else if cur_error {
+                                        ui::SOLAR_ERROR.write().unwrap().take();
+                                    }
                                 }
                                 Ok(DeviceState::VeBus(device_state)) => {
                                     info!("Read VeBus: ");
@@ -308,7 +331,11 @@ impl Client {
                                                     std::sync::atomic::Ordering::Relaxed,
                                                 );
                                             }
-                                            _ => {}
+                                            mode => {
+                                                ui::INV_MODE.write().unwrap().replace(
+                                                    CString::new(format!("{mode}")).unwrap(),
+                                                );
+                                            }
                                         }
 
                                         if last_switch.is_some() {
@@ -324,11 +351,23 @@ impl Client {
                                     let lock = ui::AC_WATTS.write();
                                     *(lock.unwrap()) =
                                         device_state.ac_out_power_w.unwrap_or(0_f32) as i32;
+
+                                    let cur_error = ui::INV_ERROR.read().unwrap().is_some();
+                                    if device_state.error != ErrorState::NoError
+                                        && device_state.error != ErrorState::NotApplicable
+                                    {
+                                        ui::INV_ERROR.write().unwrap().replace(
+                                            CString::new(format!("{}", device_state.error))
+                                                .unwrap(),
+                                        );
+                                    } else if cur_error {
+                                        ui::INV_ERROR.write().unwrap().take();
+                                    }
                                 }
                                 Ok(DeviceState::BatteryMonitor(device_state)) => {
                                     info!("Read Batt: ");
 
-                                    let lock = ui::SOC.write();
+                                    let lock = ui::BATT_SOC.write();
                                     *(lock.unwrap()) = digits(
                                         device_state.state_of_charge_pct.unwrap_or(0_f32),
                                         false,
@@ -345,6 +384,19 @@ impl Client {
                                         device_state.battery_current_a.unwrap_or(0_f32),
                                         true,
                                     );
+
+                                    let cur_alarm = ui::BATT_ALARM.read().unwrap().is_some();
+                                    if !device_state.alarm_reason.is_empty() {
+                                        ui::BATT_ALARM.write().unwrap().replace(
+                                            CString::new(format!(
+                                                "{:?}",
+                                                device_state.alarm_reason
+                                            ))
+                                            .unwrap(),
+                                        );
+                                    } else if cur_alarm {
+                                        ui::BATT_ALARM.write().unwrap().take();
+                                    }
                                 }
                                 Ok(_device) => {
                                     // info!("{} Unknown device state {device:?}", result.bda);

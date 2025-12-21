@@ -24,6 +24,11 @@ lv_style_t *get_style_images_MAIN_DEFAULT();
 void add_style_images(lv_obj_t *obj);
 void remove_style_images(lv_obj_t *obj);
 
+// Style: Labels_Error
+lv_style_t *get_style_labels_error_MAIN_DEFAULT();
+void add_style_labels_error(lv_obj_t *obj);
+void remove_style_labels_error(lv_obj_t *obj);
+
 
 
 #ifdef __cplusplus

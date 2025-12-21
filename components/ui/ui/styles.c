@@ -125,6 +125,35 @@ void remove_style_images(lv_obj_t *obj) {
 };
 
 //
+// Style: Labels_Error
+//
+
+void init_style_labels_error_MAIN_DEFAULT(lv_style_t *style) {
+    lv_style_set_text_font(style, &ui_font_roboto_reg_32);
+    lv_style_set_text_color(style, lv_color_hex(0xffe72e2e));
+};
+
+lv_style_t *get_style_labels_error_MAIN_DEFAULT() {
+    static lv_style_t *style;
+    if (!style) {
+        style = lv_mem_alloc(sizeof(lv_style_t));
+        lv_style_init(style);
+        init_style_labels_error_MAIN_DEFAULT(style);
+    }
+    return style;
+};
+
+void add_style_labels_error(lv_obj_t *obj) {
+    (void)obj;
+    lv_obj_add_style(obj, get_style_labels_error_MAIN_DEFAULT(), LV_PART_MAIN | LV_STATE_DEFAULT);
+};
+
+void remove_style_labels_error(lv_obj_t *obj) {
+    (void)obj;
+    lv_obj_remove_style(obj, get_style_labels_error_MAIN_DEFAULT(), LV_PART_MAIN | LV_STATE_DEFAULT);
+};
+
+//
 //
 //
 
@@ -134,6 +163,7 @@ void add_style(lv_obj_t *obj, int32_t styleIndex) {
         add_style_labels,
         add_style_arcs,
         add_style_images,
+        add_style_labels_error,
     };
     add_style_funcs[styleIndex](obj);
 }
@@ -144,6 +174,7 @@ void remove_style(lv_obj_t *obj, int32_t styleIndex) {
         remove_style_labels,
         remove_style_arcs,
         remove_style_images,
+        remove_style_labels_error,
     };
     remove_style_funcs[styleIndex](obj);
 }

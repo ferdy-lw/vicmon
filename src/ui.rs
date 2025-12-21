@@ -1,9 +1,10 @@
 use std::{
+    ffi::CString,
     ptr,
     sync::{
         atomic::AtomicBool,
         mpsc::{sync_channel, Receiver, SyncSender},
-        RwLock,
+        LazyLock, RwLock,
     },
     thread,
     time::{Duration, Instant},
@@ -20,43 +21,70 @@ pub const ON_DURATION: Duration = Duration::from_secs(30);
 pub static LAST_TOUCH: RwLock<Option<Instant>> = RwLock::new(None);
 pub static DEBOUNCE_INV_SWITCH: RwLock<Option<Instant>> = RwLock::new(None);
 
-pub static SOC: RwLock<f32> = RwLock::new(0f32);
-pub static BATT_VOLT: RwLock<f32> = RwLock::new(0f32);
-pub static BATT_AMP: RwLock<f32> = RwLock::new(0f32);
-pub static SOLAR_WATTS: RwLock<i32> = RwLock::new(0i32);
-pub static AC_WATTS: RwLock<i32> = RwLock::new(0i32);
-pub static BATT_TEMP: RwLock<i32> = RwLock::new(0i32);
 pub static INVERTER_ON: AtomicBool = AtomicBool::new(false);
 pub static INVERTER_PREV: AtomicBool = AtomicBool::new(false);
+pub static INV_MODE: RwLock<Option<CString>> = RwLock::new(None);
+pub static INV_ERROR: RwLock<Option<CString>> = RwLock::new(None);
+pub static AC_WATTS: RwLock<i32> = RwLock::new(0i32);
+pub static BATT_SOC: RwLock<f32> = RwLock::new(0f32);
+pub static BATT_VOLT: RwLock<f32> = RwLock::new(0f32);
+pub static BATT_AMP: RwLock<f32> = RwLock::new(0f32);
+pub static BATT_TEMP: RwLock<i32> = RwLock::new(0i32);
+pub static BATT_ALARM: RwLock<Option<CString>> = RwLock::new(None);
+pub static SOLAR_WATTS: RwLock<i32> = RwLock::new(0i32);
+pub static SOLAR_YIELD: RwLock<i32> = RwLock::new(0i32);
+pub static SOLAR_MODE: RwLock<Option<CString>> = RwLock::new(None);
+pub static SOLAR_ERROR: RwLock<Option<CString>> = RwLock::new(None);
 
-#[unsafe(no_mangle)]
-pub extern "C" fn get_var_soc() -> f32 {
-    *SOC.read().unwrap()
-}
+static EMPTY_STR: LazyLock<CString> = LazyLock::new(|| CString::new("").unwrap());
+type Cstring = *const ::core::ffi::c_char;
 
+//----------
+// INVERTER
+//----------
 #[unsafe(no_mangle)]
-pub extern "C" fn set_var_soc(_value: f32) {
-    // NOOP
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn get_var_inverter_mode() -> bool {
+pub extern "C" fn get_var_inv_switch() -> bool {
     INVERTER_ON.load(std::sync::atomic::Ordering::Relaxed)
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn set_var_inverter_mode(value: bool) {
+pub extern "C" fn set_var_inv_switch(value: bool) {
     INVERTER_ON.store(value, std::sync::atomic::Ordering::Relaxed);
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn set_var_solar_watts(_value: i32) {
+pub extern "C" fn get_var_inv_mode() -> Cstring {
+    INV_MODE
+        .read()
+        .unwrap()
+        .as_ref()
+        .unwrap_or(&EMPTY_STR)
+        .as_ptr()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_inv_mode(_value: Cstring) {
     // NOOP
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn get_var_solar_watts() -> i32 {
-    *SOLAR_WATTS.read().unwrap()
+pub extern "C" fn get_var_inv_error() -> Cstring {
+    INV_ERROR
+        .read()
+        .unwrap()
+        .as_ref()
+        .unwrap_or(&EMPTY_STR)
+        .as_ptr()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_inv_error(_value: Cstring) {
+    // NOOP
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_ac_watts() -> i32 {
+    *AC_WATTS.read().unwrap()
 }
 
 #[unsafe(no_mangle)]
@@ -64,9 +92,17 @@ pub extern "C" fn set_var_ac_watts(_value: i32) {
     // NOOP
 }
 
+//---------
+// BATTERY
+//---------
 #[unsafe(no_mangle)]
-pub extern "C" fn get_var_ac_watts() -> i32 {
-    *AC_WATTS.read().unwrap()
+pub extern "C" fn get_var_batt_soc() -> f32 {
+    *BATT_SOC.read().unwrap()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_batt_soc(_value: f32) {
+    // NOOP
 }
 
 #[unsafe(no_mangle)]
@@ -90,14 +126,83 @@ pub extern "C" fn set_var_batt_amp(_value: f32) {
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn get_var_batt_temp() -> i32 {
+    *BATT_TEMP.read().unwrap()
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn set_var_batt_temp(_value: i32) {
     // NOOP
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn get_var_batt_temp() -> i32 {
-    *BATT_TEMP.read().unwrap()
+pub extern "C" fn get_var_batt_alarm() -> Cstring {
+    BATT_ALARM
+        .read()
+        .unwrap()
+        .as_ref()
+        .unwrap_or(&EMPTY_STR)
+        .as_ptr()
 }
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_batt_alarm(_value: Cstring) {
+    // NOOP
+}
+
+//-------
+// SOLAR
+//-------
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_solar_watts() -> i32 {
+    *SOLAR_WATTS.read().unwrap()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_solar_watts(_value: i32) {
+    // NOOP
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_solar_yield() -> i32 {
+    *SOLAR_YIELD.read().unwrap()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_solar_yield(_value: i32) {
+    // NOOP
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_solar_mode() -> Cstring {
+    SOLAR_MODE
+        .read()
+        .unwrap()
+        .as_ref()
+        .unwrap_or(&EMPTY_STR)
+        .as_ptr()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_solar_mode(_value: Cstring) {
+    // NOOP
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_solar_error() -> Cstring {
+    SOLAR_ERROR
+        .read()
+        .unwrap()
+        .as_ref()
+        .unwrap_or(&EMPTY_STR)
+        .as_ptr()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_solar_error(_value: Cstring) {
+    // NOOP
+}
+
 pub unsafe fn setup_backlight() -> Receiver<bool> {
     LAST_TOUCH.write().unwrap().replace(Instant::now());
 
