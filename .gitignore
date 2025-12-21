@@ -1,0 +1,9 @@
+/.vscode
+/.zed
+/.devcontainer
+/.embuild
+/target
+/Cargo.lock
+
+# for now
+/docs

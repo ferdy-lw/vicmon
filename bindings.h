@@ -1,0 +1,5 @@
+#include "lvgl.h"
+#include "components/lvgl_configs/waveshare_rgb_lcd_port.h"
+#include "components/ui/ui/ui.h"
+#include "components/ui/ui/vars.h"
+#include "components/ui/ui/screens.h"

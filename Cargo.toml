@@ -1,0 +1,87 @@
+[package]
+name = "vicmon"
+version = "0.1.0"
+authors = ["ferdy"]
+edition = "2021"
+resolver = "2"
+rust-version = "1.88"
+
+[[bin]]
+name = "vicmon"
+harness = false # do not use the built in cargo test harness -> resolve rust-analyzer errors
+
+[profile.release]
+opt-level = "s"
+
+[profile.dev]
+debug = true    # Symbols are nice and they don't increase the size on Flash
+opt-level = "z"
+
+[features]
+default = []
+
+experimental = ["esp-idf-svc/experimental"]
+
+[dependencies]
+log = "0.4"
+# esp-idf-svc = "0.51"
+embedded-svc = { version = "0.28", default-features = false }
+anyhow = "1.0"
+thiserror = "2.0"
+heapless = "0.9"
+circular-buffer = "1.2"
+victron_ble = {version = "1.0.0",  default-features = false, features = ["serde"] }
+serde = { version = "1.0", features = ["derive"]}
+embassy-sync = "0.7"
+esp-idf-svc = {version = "0.51", features = ["experimental", "embassy-sync"] }
+# Remove following when the esp-idf-svc ble fixes are applied
+num_enum = { version = "0.7", default-features = false }
+
+# --- Optional Embassy Integration ---
+# esp-idf-svc = { version = "0.51", features = ["critical-section", "embassy-time-driver", "embassy-sync"] }
+
+# If you enable embassy-time-driver, you MUST also add one of:
+
+# a) Standalone Embassy libs ( embassy-time, embassy-sync etc) with a foreign async runtime:
+# embassy-time = { version = "0.5.0", features = ["generic-queue-8"] } # NOTE: any generic-queue variant will work
+
+# b) With embassy-executor:
+# embassy-executor = { version = "0.9", features = ["executor-thread", "arch-std"] }
+
+# NOTE: if you use embassy-time with embassy-executor you don't need the generic-queue-8 feature
+
+# --- Temporary workaround for embassy-executor < 0.8 ---
+# esp-idf-svc = { version = "0.51", features = ["embassy-time-driver", "embassy-sync"] }
+# critical-section = { version = "1.1", features = ["std"], default-features = false }
+
+
+[build-dependencies]
+embuild = "0.33"
+
+[patch.crates-io]
+# esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc" }
+esp-idf-svc = { path = "../esp-idf-svc" }
+esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys" }
+esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf-hal" }
+
+#esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc.git" }
+
+[[package.metadata.esp-idf-sys.extra_components]]
+remote_component = { name = "lvgl/lvgl", version = "8.4.0"}
+bindings_header = "bindings.h"
+bindings_module = "lcd_bindings"
+
+[[package.metadata.esp-idf-sys.extra_components]]
+remote_component = { name = "espressif/esp_lcd_touch_gt911", version = "^1"}
+bindings_header = "bindings.h"
+bindings_module = "lcd_bindings"
+
+[[package.metadata.esp-idf-sys.extra_components]]
+component_dirs = ["components/lvgl_configs"]
+bindings_header = "bindings.h"
+bindings_module = "lcd_bindings"
+
+[[package.metadata.esp-idf-sys.extra_components]]
+component_dirs = ["components/ui"]
+bindings_header = "bindings.h"
+bindings_module = "lcd_bindings"
