@@ -1,10 +1,11 @@
 {
   "navigation": {
     "selectedUserPageObject": "[vicmon.eez-project]:/userPages/0",
-    "selectedGlobalVariableObject": "[vicmon.eez-project]:/variables/globalVariables/1",
-    "selectedStyleObject": "[vicmon.eez-project]:/lvglStyles/styles/2",
+    "selectedGlobalVariableObject": "[vicmon.eez-project]:/variables/globalVariables/8",
+    "selectedStyleObject": "[vicmon.eez-project]:/lvglStyles/styles/3",
     "selectedThemeObject": "[vicmon.eez-project]:/themes/0",
-    "selectedFontObject": "[vicmon.eez-project]:/fonts/5",
+    "selectedFontObject": "[vicmon.eez-project]:/fonts/0",
+    "selectedBitmapObject": "[vicmon.eez-project]:/bitmaps/8",
     "subnavigationSelectedItems": {
       "variables-tab/sub-navigation/selected-item": "Global"
     }
@@ -27,7 +28,6 @@
           },
           {
             "type": "border",
-            "selected": 0,
             "size": 119.859375,
             "location": "right",
             "children": [
@@ -166,7 +166,7 @@
                 {
                   "type": "tabset",
                   "id": "#00e82a86-84eb-4421-b50b-0f1e49997ead",
-                  "weight": 1.5724637681159421,
+                  "weight": 1.0621558219518503,
                   "enableClose": false,
                   "children": [
                     {
@@ -177,13 +177,12 @@
                       "enableClose": false,
                       "icon": "svg:hierarchy"
                     }
-                  ],
-                  "active": true
+                  ]
                 },
                 {
                   "type": "tabset",
                   "id": "#948dab53-6ed8-4478-b25b-1a01c2936380",
-                  "weight": 1,
+                  "weight": 1.510307946164093,
                   "enableClose": false,
                   "children": [
                     {
@@ -209,10 +208,10 @@
                 {
                   "type": "tab",
                   "id": "#579fa1c5-ff6c-4ea3-9526-ecaee56c21f5",
-                  "name": "roboto_med_48",
+                  "name": "roboto_reg_14",
                   "component": "editor",
                   "config": {
-                    "objectPath": "[vicmon.eez-project]:/fonts/5",
+                    "objectPath": "[vicmon.eez-project]:/fonts/0",
                     "permanent": false
                   },
                   "icon": "material:font_download"
@@ -240,7 +239,8 @@
                   },
                   "icon": "svg:page"
                 }
-              ]
+              ],
+              "active": true
             },
             {
               "type": "tabset",
@@ -1011,27 +1011,9 @@
     "[vicmon.eez-project]:/userPages/0[flow-state]": {
       "selection": {
         "0": {
-          "0": {
-            "2": {}
-          },
           "1": {
-            "2": {
-              "0": {},
-              "1": {
-                "0": {}
-              },
-              "2": {
-                "$selected": true
-              },
-              "3": {
-                "0": {},
-                "1": {}
-              },
-              "4": {
-                "1": {}
-              }
-            },
-            "3": {
+            "3": {},
+            "5": {
               "1": {}
             }
           }
@@ -1039,8 +1021,8 @@
       },
       "transform": {
         "translate": {
-          "x": -481.5,
-          "y": -257
+          "x": -400,
+          "y": -240
         },
         "scale": 1
       },
@@ -1054,7 +1036,8 @@
     "[vicmon.eez-project]:/lvglStyles/styles[tree-state]": {
       "0": {},
       "1": {},
-      "2": {
+      "2": {},
+      "3": {
         "$selected": true
       }
     }
@@ -1074,13 +1057,9 @@
   "lvglPart": "MAIN",
   "lvglState": "DEFAULT",
   "lvglExpandedPropertiesGroup": [
-    "LAYOUT",
-    "PADDING",
     "MARGIN",
     "POSITION AND SIZE",
-    "BACKGROUND",
-    "TEXT",
-    "IMAGE"
+    "MISCELLANEOUS"
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,

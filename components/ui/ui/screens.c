@@ -537,7 +537,7 @@ void create_screen_main() {
                         lv_obj_t *parent_obj = obj;
                         {
                             lv_obj_t *obj = lv_img_create(parent_obj);
-                            lv_obj_set_pos(obj, 89, 9);
+                            lv_obj_set_pos(obj, 88, 9);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                             lv_img_set_src(obj, &img_solar);
                             add_style_images(obj);

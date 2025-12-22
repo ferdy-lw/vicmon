@@ -22,7 +22,7 @@ use esp_idf_svc::bt::ble::gap::{
 };
 use esp_idf_svc::bt::{BdAddr, Ble, BtDriver, BtStatus, BtUuid};
 use esp_idf_svc::sys::EspError;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use victron_ble::{DeviceState, ErrorState, Mode};
 
 use crate::devices::*;
@@ -273,7 +273,7 @@ impl Client {
                         if let Some(key) = bda_to_key.get(&BdAddrKey(result.bda)) {
                             match victron_ble::parse_manufacturer_data(&man_data[2..], key) {
                                 Ok(DeviceState::SolarCharger(device_state)) => {
-                                    info!("Read mppt: ");
+                                    debug!("Read mppt: {device_state:?} ");
 
                                     let lock = ui::SOLAR_WATTS.write();
                                     *(lock.unwrap()) =
@@ -281,7 +281,8 @@ impl Client {
 
                                     let lock = ui::SOLAR_YIELD.write();
                                     *(lock.unwrap()) =
-                                        device_state.yield_today_kwh.unwrap_or(0_f32) as i32;
+                                        (device_state.yield_today_kwh.unwrap_or(0_f32) * 1_000.0)
+                                            as i32;
 
                                     if device_state.mode != Mode::NotApplicable {
                                         ui::SOLAR_MODE.write().unwrap().replace(
@@ -302,7 +303,7 @@ impl Client {
                                     }
                                 }
                                 Ok(DeviceState::VeBus(device_state)) => {
-                                    info!("Read VeBus: ");
+                                    debug!("Read VeBus: {device_state:?} ");
                                     // Give it a few seconds after switching the inverter before reading state again
                                     let last_switch_lock = ui::DEBOUNCE_INV_SWITCH.read().unwrap();
                                     let last_switch = last_switch_lock.as_ref();
@@ -365,7 +366,7 @@ impl Client {
                                     }
                                 }
                                 Ok(DeviceState::BatteryMonitor(device_state)) => {
-                                    info!("Read Batt: ");
+                                    debug!("Read Batt: {device_state:?} ");
 
                                     let lock = ui::BATT_SOC.write();
                                     *(lock.unwrap()) = digits(
