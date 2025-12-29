@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Vicmon Configuration</title>
+        <style type="text/css">
+            body {
+                max-width: 50em;
+                margin: auto;
+                padding: 1em;
+                font: 1em/1.65 sans-serif;
+            }
+            input {
+                width: 100%;
+                height: 3em;
+                margin-bottom: 1em;
+            }
+        </style>
+    </head>
+    <body>
+        <form
+            id="config-form"
+            action="/post"
+            method="post"
+            accept-charset="utf-8"
+        >
+            <label for="mppt-mac">MPPT MAC:</label>
+            <input type="text" id="mppt-mac" name="mppt_mac" /><br />
+            <label for="mppt-key">MPPT Key:</label>
+            <input type="text" id="mppt-key" name="mppt_key" /><br />
+            <label for="bmv-mac">BMV MAC:</label>
+            <input type="text" id="bmv-mac" name="bmv_mac" /><br />
+            <label for="bmv-key">BMV Key:</label>
+            <input type="text" id="bmv-key" name="bmv_key" /><br />
+            <label for="inv-mac">Inverter MAC:</label>
+            <input type="text" id="inv-mac" name="inv_mac" /><br />
+            <label for="inv-key">Inverter Key:</label>
+            <input type="text" id="inv-key" name="inv_key" /><br />
+            <label for="pin">Inverter PIN (6 digits)</label>
+            <input
+                type="text"
+                id="inv-pin"
+                name="inv_pin"
+                inputmode="numeric"
+                pattern="[0-9]+"
+                maxlength="6"
+                oninput="validity.valid"
+            /><br />
+
+            <input type="submit" value="Submit" />
+        </form>
+        <p id="server-resp"></p>
+        <script type="text/javascript">
+            let theForm = document.getElementById("config-form");
+            let serverResp = document.getElementById("server-resp");
+
+            theForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                let form = e.currentTarget;
+                let url = form.action;
+
+                try {
+                    let entries = Object.fromEntries(
+                        new FormData(form).entries(),
+                    );
+                    entries["inv_pin"] = parseInt(entries["inv_pin"]);
+
+                    let resp = await fetch(url, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Accept: "application/json",
+                        },
+                        body: JSON.stringify(entries),
+                    });
+
+                    serverResp.innerText = await resp.text();
+                } catch (err) {
+                    console.error(err);
+                }
+            });
+        </script>
+    </body>
+</html>

@@ -181,7 +181,7 @@
         "objID": "4d6cf62b-b437-4f27-e2cd-0043e86c3528",
         "name": "solar_watts",
         "type": "integer",
-        "defaultValue": "50",
+        "defaultValue": "150",
         "persistent": false,
         "native": true
       },
@@ -208,12 +208,237 @@
         "defaultValue": "\"\"",
         "persistent": false,
         "native": true
+      },
+      {
+        "objID": "05db0c5b-1a0b-426c-a17d-f29c46a87d8d",
+        "name": "ip_addr",
+        "type": "string",
+        "defaultValue": "\"a\"",
+        "persistent": false,
+        "native": true
+      },
+      {
+        "objID": "f7688dc9-d763-46ad-e577-824ad335e095",
+        "name": "backlight_delay",
+        "type": "integer",
+        "defaultValue": "30",
+        "persistent": false,
+        "native": true
       }
     ],
     "structures": [],
     "enums": []
   },
-  "actions": [],
+  "actions": [
+    {
+      "objID": "736feb05-5976-476b-9bd1-86bb1eed28cf",
+      "components": [
+        {
+          "objID": "54fdb780-e405-4061-fa68-1cb13468492a",
+          "type": "LVGLActionComponent",
+          "left": -162,
+          "top": -214,
+          "width": 614,
+          "height": 87,
+          "customInputs": [
+            {
+              "objID": "a8cfad91-a7c4-4b13-dfaf-c1ba443ff971",
+              "name": "value",
+              "type": "integer"
+            },
+            {
+              "objID": "f6c620a1-fbde-41cc-ffa6-2dd68db5e346",
+              "name": "image",
+              "type": "string"
+            },
+            {
+              "objID": "1fbb5bdc-89fc-4d19-cd17-4a0c01bd8c86",
+              "name": "max",
+              "type": "integer"
+            }
+          ],
+          "customOutputs": [],
+          "actions": [
+            {
+              "objID": "d1223f23-23c9-4d71-b9ec-b96a06850f80",
+              "action": "objSetStyleOpa",
+              "object": "image",
+              "objectType": "expression",
+              "opacity": "Math.max(50, Math.min(255, Flow.toInteger(value * max * 255)))",
+              "opacityType": "expression"
+            }
+          ]
+        },
+        {
+          "objID": "bf05bf13-d811-45d8-89f1-279c8da983cb",
+          "type": "InputActionComponent",
+          "left": -339,
+          "top": -170,
+          "width": 87,
+          "height": 24,
+          "customInputs": [],
+          "customOutputs": [],
+          "name": "image",
+          "inputType": "string"
+        },
+        {
+          "objID": "2d2f0d58-4e21-49c6-f097-1fd42673b5cf",
+          "type": "InputActionComponent",
+          "left": -339,
+          "top": -214,
+          "width": 87,
+          "height": 24,
+          "customInputs": [],
+          "customOutputs": [],
+          "name": "value",
+          "inputType": "integer"
+        },
+        {
+          "objID": "43af4e12-7eb2-4087-acbf-2984d5c7668d",
+          "type": "InputActionComponent",
+          "left": -339,
+          "top": -127,
+          "width": 87,
+          "height": 24,
+          "customInputs": [],
+          "customOutputs": [],
+          "name": "max",
+          "inputType": "integer"
+        }
+      ],
+      "connectionLines": [
+        {
+          "objID": "a67ede4a-e05b-4e78-a4c8-501ab8cc225c",
+          "source": "bf05bf13-d811-45d8-89f1-279c8da983cb",
+          "output": "@seqout",
+          "target": "54fdb780-e405-4061-fa68-1cb13468492a",
+          "input": "image"
+        },
+        {
+          "objID": "ad6200ba-ed74-4e8d-b379-91aa2a09f6e9",
+          "source": "2d2f0d58-4e21-49c6-f097-1fd42673b5cf",
+          "output": "@seqout",
+          "target": "54fdb780-e405-4061-fa68-1cb13468492a",
+          "input": "value"
+        },
+        {
+          "objID": "3f5b0c6e-44ac-49c5-feb2-a6d5703bac45",
+          "source": "43af4e12-7eb2-4087-acbf-2984d5c7668d",
+          "output": "@seqout",
+          "target": "54fdb780-e405-4061-fa68-1cb13468492a",
+          "input": "max"
+        }
+      ],
+      "localVariables": [],
+      "userProperties": [],
+      "name": "solar_highlight",
+      "implementationType": "flow"
+    },
+    {
+      "objID": "833abaee-f9a1-47ea-cde8-b7826f37f74a",
+      "components": [
+        {
+          "objID": "2ddadcf0-b2a0-4c75-bd4e-3f05e3835269",
+          "type": "LoopActionComponent",
+          "left": -160,
+          "top": -133.5,
+          "width": 328,
+          "height": 69,
+          "customInputs": [],
+          "customOutputs": [],
+          "variable": "solar_watts",
+          "from": "0",
+          "to": "400",
+          "step": "20",
+          "version": 1
+        },
+        {
+          "objID": "0bf367a7-c0ee-41bc-9c20-37668dd4f415",
+          "type": "DelayActionComponent",
+          "left": -40,
+          "top": -20.5,
+          "width": 87,
+          "height": 53,
+          "customInputs": [],
+          "customOutputs": [],
+          "milliseconds": "500"
+        },
+        {
+          "objID": "608fa5f0-4152-4140-c5d5-197e9b2a5a48",
+          "type": "LoopActionComponent",
+          "left": -167,
+          "top": 64.5,
+          "width": 328,
+          "height": 69,
+          "customInputs": [],
+          "customOutputs": [],
+          "variable": "solar_yield",
+          "from": "0",
+          "to": "800",
+          "step": "20",
+          "version": 1
+        },
+        {
+          "objID": "c9b68c10-7971-41fa-b345-c0612a039436",
+          "type": "StartActionComponent",
+          "left": -317,
+          "top": -157,
+          "width": 87,
+          "height": 24,
+          "customInputs": [],
+          "customOutputs": []
+        }
+      ],
+      "connectionLines": [
+        {
+          "objID": "fdbc1b1b-5541-4109-9ce4-ecb7c3bbad53",
+          "source": "0bf367a7-c0ee-41bc-9c20-37668dd4f415",
+          "output": "@seqout",
+          "target": "2ddadcf0-b2a0-4c75-bd4e-3f05e3835269",
+          "input": "next"
+        },
+        {
+          "objID": "1ed9cfc3-c4da-4c0b-9558-87084e02ec1e",
+          "source": "2ddadcf0-b2a0-4c75-bd4e-3f05e3835269",
+          "output": "@seqout",
+          "target": "0bf367a7-c0ee-41bc-9c20-37668dd4f415",
+          "input": "@seqin"
+        },
+        {
+          "objID": "07f512e6-e358-44e4-e6ea-2dff555a9b16",
+          "source": "608fa5f0-4152-4140-c5d5-197e9b2a5a48",
+          "output": "@seqout",
+          "target": "0bf367a7-c0ee-41bc-9c20-37668dd4f415",
+          "input": "@seqin"
+        },
+        {
+          "objID": "06811090-c314-4c65-f8c8-b4b4875946df",
+          "source": "0bf367a7-c0ee-41bc-9c20-37668dd4f415",
+          "output": "@seqout",
+          "target": "608fa5f0-4152-4140-c5d5-197e9b2a5a48",
+          "input": "next"
+        },
+        {
+          "objID": "e8111967-add2-4d51-a1bf-6e78231215c5",
+          "source": "c9b68c10-7971-41fa-b345-c0612a039436",
+          "output": "@seqout",
+          "target": "2ddadcf0-b2a0-4c75-bd4e-3f05e3835269",
+          "input": "start"
+        },
+        {
+          "objID": "a2168793-0ab2-4886-f122-06e6c418aa3d",
+          "source": "c9b68c10-7971-41fa-b345-c0612a039436",
+          "output": "@seqout",
+          "target": "608fa5f0-4152-4140-c5d5-197e9b2a5a48",
+          "input": "start"
+        }
+      ],
+      "localVariables": [],
+      "userProperties": [],
+      "name": "solar_value_loop",
+      "implementationType": "flow"
+    }
+  ],
   "userPages": [
     {
       "objID": "4b40eba7-b31a-468a-b887-11dfd0b6637f",
@@ -243,7 +468,7 @@
             {
               "objID": "ccc6399d-1432-42d9-c674-13856b7a63b2",
               "type": "LVGLContainerWidget",
-              "left": 480,
+              "left": 500,
               "top": 0,
               "width": 300,
               "height": 480,
@@ -640,7 +865,14 @@
                       "states": "",
                       "useStyle": "Images",
                       "localStyles": {
-                        "objID": "f56100ce-daa9-49ba-e5a4-14b75a15de99"
+                        "objID": "f56100ce-daa9-49ba-e5a4-14b75a15de99",
+                        "definition": {
+                          "MAIN": {
+                            "DEFAULT": {
+                              "img_recolor": "#f5a3a3"
+                            }
+                          }
+                        }
                       },
                       "group": "",
                       "groupIndex": 0,
@@ -735,7 +967,7 @@
                   "previewValue": " "
                 }
               ],
-              "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+              "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE|EVENT_BUBBLE",
               "hiddenFlagType": "literal",
               "clickableFlag": true,
               "clickableFlagType": "literal",
@@ -755,7 +987,7 @@
             {
               "objID": "953506fb-17cd-4a31-ec96-ee28a152a518",
               "type": "LVGLContainerWidget",
-              "left": 20,
+              "left": 0,
               "top": 0,
               "width": 500,
               "height": 480,
@@ -959,7 +1191,14 @@
                           "states": "",
                           "useStyle": "Images",
                           "localStyles": {
-                            "objID": "cd718343-90eb-43dd-dd5c-490f1506f6c7"
+                            "objID": "cd718343-90eb-43dd-dd5c-490f1506f6c7",
+                            "definition": {
+                              "MAIN": {
+                                "DEFAULT": {
+                                  "img_recolor": "#a3caf5"
+                                }
+                              }
+                            }
                           },
                           "group": "",
                           "groupIndex": 0,
@@ -1756,7 +1995,14 @@
                           "states": "",
                           "useStyle": "Images",
                           "localStyles": {
-                            "objID": "4a9a5852-eea1-4b70-eb73-0a72b3470e2b"
+                            "objID": "4a9a5852-eea1-4b70-eb73-0a72b3470e2b",
+                            "definition": {
+                              "MAIN": {
+                                "DEFAULT": {
+                                  "img_recolor": "#f5c5a3"
+                                }
+                              }
+                            }
                           },
                           "group": "",
                           "groupIndex": 0,
@@ -1981,7 +2227,7 @@
                 {
                   "objID": "fac15e94-92e6-4b0b-fe7d-1d4329d547c0",
                   "type": "LVGLContainerWidget",
-                  "left": 5,
+                  "left": 0,
                   "top": 361,
                   "width": 120,
                   "height": 74,
@@ -2017,6 +2263,7 @@
                       },
                       "timeline": [],
                       "eventHandlers": [],
+                      "identifier": "image_solar",
                       "leftUnit": "px",
                       "topUnit": "px",
                       "widthUnit": "content",
@@ -2034,7 +2281,14 @@
                       "states": "",
                       "useStyle": "Images",
                       "localStyles": {
-                        "objID": "5a7732dc-b4b9-411c-b4fe-2d1a180a0955"
+                        "objID": "5a7732dc-b4b9-411c-b4fe-2d1a180a0955",
+                        "definition": {
+                          "MAIN": {
+                            "DEFAULT": {
+                              "img_recolor": "#ffff00"
+                            }
+                          }
+                        }
                       },
                       "group": "",
                       "groupIndex": 0,
@@ -2303,6 +2557,7 @@
                       },
                       "timeline": [],
                       "eventHandlers": [],
+                      "identifier": "image_sun",
                       "leftUnit": "px",
                       "topUnit": "px",
                       "widthUnit": "content",
@@ -2320,7 +2575,14 @@
                       "states": "",
                       "useStyle": "Images",
                       "localStyles": {
-                        "objID": "1d344e29-cd32-42d6-b168-d74aca9f8c18"
+                        "objID": "1d344e29-cd32-42d6-b168-d74aca9f8c18",
+                        "definition": {
+                          "MAIN": {
+                            "DEFAULT": {
+                              "img_recolor": "#ffff00"
+                            }
+                          }
+                        }
                       },
                       "group": "",
                       "groupIndex": 0,
@@ -2556,7 +2818,7 @@
                   "previewValue": " "
                 }
               ],
-              "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+              "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE|EVENT_BUBBLE",
               "hiddenFlagType": "literal",
               "clickableFlag": true,
               "clickableFlagType": "literal",
@@ -2572,6 +2834,73 @@
               },
               "group": "",
               "groupIndex": 0
+            },
+            {
+              "objID": "31e1a12d-c59a-4491-e540-768c75d50d67",
+              "type": "LVGLImageWidget",
+              "left": 0,
+              "top": 0,
+              "width": 34,
+              "height": 34,
+              "customInputs": [],
+              "customOutputs": [],
+              "style": {
+                "objID": "f5db4b41-c47f-43ba-d765-f493b4f2cb25",
+                "useStyle": "default",
+                "conditionalStyles": [],
+                "childStyles": []
+              },
+              "timeline": [],
+              "eventHandlers": [
+                {
+                  "objID": "3986a895-0a72-4d65-e70b-886b411214db",
+                  "eventName": "CLICKED",
+                  "handlerType": "flow",
+                  "action": "close",
+                  "userData": 0
+                }
+              ],
+              "identifier": "go_config",
+              "leftUnit": "px",
+              "topUnit": "px",
+              "widthUnit": "content",
+              "heightUnit": "content",
+              "children": [],
+              "widgetFlags": "ADV_HITTEST|CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+              "hiddenFlagType": "literal",
+              "clickableFlag": true,
+              "clickableFlagType": "literal",
+              "flagScrollbarMode": "",
+              "flagScrollDirection": "",
+              "scrollSnapX": "",
+              "scrollSnapY": "",
+              "checkedStateType": "literal",
+              "disabledStateType": "literal",
+              "states": "",
+              "localStyles": {
+                "objID": "c5b7ae07-f047-4704-8395-2fea1c6504fc",
+                "definition": {
+                  "MAIN": {
+                    "DEFAULT": {
+                      "img_recolor": "#595858",
+                      "img_recolor_opa": 255,
+                      "pad_top": 5,
+                      "pad_bottom": 5,
+                      "pad_left": 5,
+                      "pad_right": 5
+                    }
+                  }
+                }
+              },
+              "group": "",
+              "groupIndex": 0,
+              "image": "settings",
+              "setPivot": false,
+              "pivotX": 0,
+              "pivotY": 0,
+              "zoom": 256,
+              "angle": 0,
+              "innerAlign": "CENTER"
             }
           ],
           "widgetFlags": "CLICKABLE|PRESS_LOCK|CLICK_FOCUSABLE|GESTURE_BUBBLE|SNAPPABLE|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER",
@@ -2770,6 +3099,138 @@
               "srcType": "literal"
             }
           ]
+        },
+        {
+          "objID": "92f72319-5746-4157-f388-9f2d2579b5f7",
+          "type": "LVGLActionComponent",
+          "left": 35,
+          "top": -346,
+          "width": 311,
+          "height": 53,
+          "customInputs": [],
+          "customOutputs": [],
+          "actions": [
+            {
+              "objID": "40c00a9b-18b9-4a84-c850-2a600e30ce3e",
+              "action": "changeScreen",
+              "screen": "Config",
+              "screenType": "literal",
+              "fadeMode": "MOVE_LEFT",
+              "fadeModeType": "literal",
+              "speed": 200,
+              "speedType": "literal",
+              "delay": 0,
+              "delayType": "literal",
+              "useStack": true,
+              "useStackType": "literal"
+            }
+          ]
+        },
+        {
+          "objID": "4c0f1438-9082-4708-829b-409b622f990f",
+          "type": "StartActionComponent",
+          "left": 13,
+          "top": 518,
+          "width": 87,
+          "height": 24,
+          "customInputs": [],
+          "customOutputs": []
+        },
+        {
+          "objID": "847bccae-7dea-4104-955e-6b555b0cc52a",
+          "type": "WatchVariableActionComponent",
+          "left": 218,
+          "top": 489,
+          "width": 141,
+          "height": 53,
+          "customInputs": [],
+          "customOutputs": [],
+          "variable": "solar_yield"
+        },
+        {
+          "objID": "9c4b37fe-5bd4-4214-bdd9-618614ba094f",
+          "type": "CallActionActionComponent",
+          "left": 426,
+          "top": 518,
+          "width": 117,
+          "height": 87,
+          "customInputs": [],
+          "customOutputs": [],
+          "action": "solar_highlight",
+          "userPropertyValues": {
+            "objID": "8c61cf23-6e98-4345-9919-1fb3498974a8",
+            "values": {}
+          }
+        },
+        {
+          "objID": "c3ef3ffb-dc6c-4505-ac1b-7518f37d1879",
+          "type": "ConstantActionComponent",
+          "left": 273,
+          "top": 550,
+          "width": 87,
+          "height": 52,
+          "customInputs": [],
+          "customOutputs": [],
+          "value": "\"image_sun\""
+        },
+        {
+          "objID": "ccd2a1af-74c5-4d2f-ab47-01ec4fbe29d0",
+          "type": "ConstantActionComponent",
+          "left": 276,
+          "top": 615,
+          "width": 87,
+          "height": 52,
+          "customInputs": [],
+          "customOutputs": [],
+          "value": ".0025"
+        },
+        {
+          "objID": "45a78792-bfbb-4cd9-a14c-f5746cb3cd3d",
+          "type": "CallActionActionComponent",
+          "left": 426,
+          "top": 723,
+          "width": 117,
+          "height": 87,
+          "customInputs": [],
+          "customOutputs": [],
+          "action": "solar_highlight",
+          "userPropertyValues": {
+            "objID": "d9b001b0-98ec-4188-b3ea-7b366c3cb5f2",
+            "values": {}
+          }
+        },
+        {
+          "objID": "1079cdb8-0561-48ec-be46-e826cf4ba130",
+          "type": "ConstantActionComponent",
+          "left": 278,
+          "top": 758,
+          "width": 87,
+          "height": 52,
+          "customInputs": [],
+          "customOutputs": [],
+          "value": "\"image_solar\""
+        },
+        {
+          "objID": "f19e2323-8ab6-406c-c835-3390c76e492a",
+          "type": "ConstantActionComponent",
+          "left": 284,
+          "top": 827,
+          "width": 87,
+          "height": 52,
+          "customInputs": [],
+          "customOutputs": [],
+          "value": ".005"
+        },
+        {
+          "objID": "7e8da3b6-ee22-4e8a-fb6c-deca79b33deb",
+          "type": "WatchVariableActionComponent",
+          "left": 222,
+          "top": 690,
+          "width": 141,
+          "height": 53,
+          "customInputs": [],
+          "customOutputs": [],
+          "variable": "solar_watts"
         }
       ],
       "connectionLines": [
@@ -2835,6 +3296,69 @@
           "output": "unknown",
           "target": "2ca07d71-fd9c-4d2b-8465-ad23a1ad0591",
           "input": "@seqin"
+        },
+        {
+          "objID": "b677265f-c21e-4b47-8750-57688ed2c865",
+          "source": "31e1a12d-c59a-4491-e540-768c75d50d67",
+          "output": "CLICKED",
+          "target": "92f72319-5746-4157-f388-9f2d2579b5f7",
+          "input": "@seqin"
+        },
+        {
+          "objID": "462a95ee-d487-4c13-cf23-933a4522810b",
+          "source": "4c0f1438-9082-4708-829b-409b622f990f",
+          "output": "@seqout",
+          "target": "847bccae-7dea-4104-955e-6b555b0cc52a",
+          "input": "@seqin"
+        },
+        {
+          "objID": "910696a6-0298-4adc-f958-c713afb92635",
+          "source": "847bccae-7dea-4104-955e-6b555b0cc52a",
+          "output": "variable",
+          "target": "9c4b37fe-5bd4-4214-bdd9-618614ba094f",
+          "input": "2d2f0d58-4e21-49c6-f097-1fd42673b5cf"
+        },
+        {
+          "objID": "732e6a77-fb5e-4b87-ce07-cbd0647d9c98",
+          "source": "c3ef3ffb-dc6c-4505-ac1b-7518f37d1879",
+          "output": "value",
+          "target": "9c4b37fe-5bd4-4214-bdd9-618614ba094f",
+          "input": "bf05bf13-d811-45d8-89f1-279c8da983cb"
+        },
+        {
+          "objID": "57a109d8-42d9-42f0-f403-b2fbcfc53d66",
+          "source": "ccd2a1af-74c5-4d2f-ab47-01ec4fbe29d0",
+          "output": "value",
+          "target": "9c4b37fe-5bd4-4214-bdd9-618614ba094f",
+          "input": "43af4e12-7eb2-4087-acbf-2984d5c7668d"
+        },
+        {
+          "objID": "3d4039c6-6f4b-4b48-fa01-911cf63e11f2",
+          "source": "1079cdb8-0561-48ec-be46-e826cf4ba130",
+          "output": "value",
+          "target": "45a78792-bfbb-4cd9-a14c-f5746cb3cd3d",
+          "input": "bf05bf13-d811-45d8-89f1-279c8da983cb"
+        },
+        {
+          "objID": "5c74ca54-04a1-4e86-d265-7d0334f7e6e4",
+          "source": "f19e2323-8ab6-406c-c835-3390c76e492a",
+          "output": "value",
+          "target": "45a78792-bfbb-4cd9-a14c-f5746cb3cd3d",
+          "input": "43af4e12-7eb2-4087-acbf-2984d5c7668d"
+        },
+        {
+          "objID": "799845ed-5e45-4ac7-e956-da4d784bdbb9",
+          "source": "4c0f1438-9082-4708-829b-409b622f990f",
+          "output": "@seqout",
+          "target": "7e8da3b6-ee22-4e8a-fb6c-deca79b33deb",
+          "input": "@seqin"
+        },
+        {
+          "objID": "73882913-8d6a-4e9b-c908-975ed021dc60",
+          "source": "7e8da3b6-ee22-4e8a-fb6c-deca79b33deb",
+          "output": "variable",
+          "target": "45a78792-bfbb-4cd9-a14c-f5746cb3cd3d",
+          "input": "2d2f0d58-4e21-49c6-f097-1fd42673b5cf"
         }
       ],
       "localVariables": [],
@@ -2844,6 +3368,603 @@
       "top": 0,
       "width": 800,
       "height": 480,
+      "createAtStart": true,
+      "deleteOnScreenUnload": false
+    },
+    {
+      "objID": "7cc92cd2-3691-458c-be90-6b776dca7933",
+      "components": [
+        {
+          "objID": "d0168a27-68df-4901-d176-39a9f6b1f3e6",
+          "type": "LVGLScreenWidget",
+          "left": 0,
+          "top": 0,
+          "width": 800,
+          "height": 480,
+          "customInputs": [],
+          "customOutputs": [],
+          "style": {
+            "objID": "4eb72ed2-2c8e-4f54-b572-afe57d263c63",
+            "useStyle": "default",
+            "conditionalStyles": [],
+            "childStyles": []
+          },
+          "timeline": [],
+          "eventHandlers": [],
+          "leftUnit": "px",
+          "topUnit": "px",
+          "widthUnit": "px",
+          "heightUnit": "px",
+          "children": [
+            {
+              "objID": "07aecc8c-0b2d-4d03-d422-2675f8d0db80",
+              "type": "LVGLImageWidget",
+              "left": 0,
+              "top": 0,
+              "width": 34,
+              "height": 34,
+              "customInputs": [],
+              "customOutputs": [],
+              "style": {
+                "objID": "caa86225-9480-458b-f2af-adeeeb44c4f7",
+                "useStyle": "default",
+                "conditionalStyles": [],
+                "childStyles": []
+              },
+              "timeline": [],
+              "eventHandlers": [
+                {
+                  "objID": "a647524a-808f-4b6b-f81f-4ab85130e518",
+                  "eventName": "CLICKED",
+                  "handlerType": "flow",
+                  "action": "close",
+                  "userData": 0
+                }
+              ],
+              "identifier": "go_main",
+              "leftUnit": "px",
+              "topUnit": "px",
+              "widthUnit": "content",
+              "heightUnit": "content",
+              "children": [],
+              "widgetFlags": "ADV_HITTEST|CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+              "hiddenFlagType": "literal",
+              "clickableFlag": true,
+              "clickableFlagType": "literal",
+              "flagScrollbarMode": "",
+              "flagScrollDirection": "",
+              "scrollSnapX": "",
+              "scrollSnapY": "",
+              "checkedStateType": "literal",
+              "disabledStateType": "literal",
+              "states": "",
+              "localStyles": {
+                "objID": "1bc277e1-3cc0-43bc-a0b5-79a906a82d80",
+                "definition": {
+                  "MAIN": {
+                    "DEFAULT": {
+                      "img_recolor": "#000000",
+                      "img_recolor_opa": 255,
+                      "pad_top": 5,
+                      "pad_bottom": 5,
+                      "pad_left": 5,
+                      "pad_right": 5
+                    }
+                  }
+                }
+              },
+              "group": "",
+              "groupIndex": 0,
+              "image": "solar",
+              "setPivot": false,
+              "pivotX": 0,
+              "pivotY": 0,
+              "zoom": 256,
+              "angle": 0,
+              "innerAlign": "CENTER"
+            },
+            {
+              "objID": "2db46fd7-5094-4472-f2d3-6d514b2db2aa",
+              "type": "LVGLContainerWidget",
+              "left": 15,
+              "top": 49,
+              "width": 285,
+              "height": 50,
+              "customInputs": [],
+              "customOutputs": [],
+              "style": {
+                "objID": "396193d1-470c-474d-9398-bcc0b5495ad9",
+                "useStyle": "default",
+                "conditionalStyles": [],
+                "childStyles": []
+              },
+              "timeline": [],
+              "eventHandlers": [],
+              "leftUnit": "px",
+              "topUnit": "px",
+              "widthUnit": "content",
+              "heightUnit": "content",
+              "children": [
+                {
+                  "objID": "741d4795-bc78-4ba2-de18-d12deec9188b",
+                  "type": "LVGLButtonWidget",
+                  "left": 0,
+                  "top": 0,
+                  "width": 140,
+                  "height": 50,
+                  "customInputs": [],
+                  "customOutputs": [],
+                  "style": {
+                    "objID": "e73e00ad-7bf8-426d-b2ea-b0cf9a4a6bc1",
+                    "useStyle": "default",
+                    "conditionalStyles": [],
+                    "childStyles": []
+                  },
+                  "timeline": [],
+                  "eventHandlers": [],
+                  "identifier": "wifi_btn",
+                  "leftUnit": "px",
+                  "topUnit": "px",
+                  "widthUnit": "px",
+                  "heightUnit": "px",
+                  "children": [
+                    {
+                      "objID": "9f90c541-b333-4e5e-eac9-1e42266005f0",
+                      "type": "LVGLLabelWidget",
+                      "left": 0,
+                      "top": 0,
+                      "width": 78,
+                      "height": 14,
+                      "customInputs": [],
+                      "customOutputs": [],
+                      "style": {
+                        "objID": "de9dc28c-f77b-42d6-ae3f-63a0d5a99ce7",
+                        "useStyle": "default",
+                        "conditionalStyles": [],
+                        "childStyles": []
+                      },
+                      "timeline": [],
+                      "eventHandlers": [],
+                      "leftUnit": "px",
+                      "topUnit": "px",
+                      "widthUnit": "content",
+                      "heightUnit": "content",
+                      "children": [],
+                      "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+                      "hiddenFlagType": "literal",
+                      "clickableFlagType": "literal",
+                      "flagScrollbarMode": "",
+                      "flagScrollDirection": "",
+                      "scrollSnapX": "",
+                      "scrollSnapY": "",
+                      "checkedStateType": "literal",
+                      "disabledStateType": "literal",
+                      "states": "",
+                      "localStyles": {
+                        "objID": "64cdbb42-0bdb-4cdc-df24-087798bc5f2d",
+                        "definition": {
+                          "MAIN": {
+                            "DEFAULT": {
+                              "align": "CENTER"
+                            }
+                          }
+                        }
+                      },
+                      "group": "",
+                      "groupIndex": 0,
+                      "text": "ip_addr == \"\" ? \"Turn Wifi ON\" : \"IP Address:\"",
+                      "textType": "expression",
+                      "longMode": "WRAP",
+                      "recolor": false,
+                      "previewValue": "Turn Wifi ON"
+                    }
+                  ],
+                  "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_ON_FOCUS|SCROLL_WITH_ARROW|SNAPPABLE",
+                  "hiddenFlagType": "literal",
+                  "clickableFlag": true,
+                  "clickableFlagType": "literal",
+                  "flagScrollbarMode": "",
+                  "flagScrollDirection": "",
+                  "scrollSnapX": "",
+                  "scrollSnapY": "",
+                  "checkedStateType": "literal",
+                  "disabledState": "ip_addr != \"\"",
+                  "disabledStateType": "expression",
+                  "states": "",
+                  "localStyles": {
+                    "objID": "b11ec652-cea4-47a3-97c1-4b37b2a85183",
+                    "definition": {
+                      "MAIN": {
+                        "DEFAULT": {
+                          "bg_color": "victron",
+                          "text_font": "roboto_reg_14"
+                        },
+                        "DISABLED": {
+                          "bg_color": "#f00",
+                          "text_color": "#000"
+                        }
+                      }
+                    }
+                  },
+                  "group": "",
+                  "groupIndex": 0
+                },
+                {
+                  "objID": "a22227e1-8ede-442f-9106-35791d36dbd3",
+                  "type": "LVGLLabelWidget",
+                  "left": 150,
+                  "top": 17,
+                  "width": 135,
+                  "height": 16,
+                  "customInputs": [],
+                  "customOutputs": [],
+                  "style": {
+                    "objID": "7e627764-eb16-4966-ebeb-5115a4fa4204",
+                    "useStyle": "default",
+                    "conditionalStyles": [],
+                    "childStyles": []
+                  },
+                  "timeline": [],
+                  "eventHandlers": [],
+                  "leftUnit": "px",
+                  "topUnit": "px",
+                  "widthUnit": "content",
+                  "heightUnit": "content",
+                  "children": [],
+                  "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+                  "hiddenFlagType": "literal",
+                  "clickableFlagType": "literal",
+                  "flagScrollbarMode": "",
+                  "flagScrollDirection": "",
+                  "scrollSnapX": "",
+                  "scrollSnapY": "",
+                  "checkedStateType": "literal",
+                  "disabledStateType": "literal",
+                  "states": "",
+                  "useStyle": "",
+                  "localStyles": {
+                    "objID": "e3821616-7dde-4048-bfc7-427e6fb8279e",
+                    "definition": {
+                      "MAIN": {
+                        "DEFAULT": {
+                          "text_font": "roboto_med_22"
+                        }
+                      }
+                    }
+                  },
+                  "group": "",
+                  "groupIndex": 0,
+                  "text": "ip_addr",
+                  "textType": "expression",
+                  "longMode": "WRAP",
+                  "recolor": false,
+                  "previewValue": "196.17.10.55"
+                }
+              ],
+              "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+              "hiddenFlagType": "literal",
+              "clickableFlag": true,
+              "clickableFlagType": "literal",
+              "flagScrollbarMode": "",
+              "flagScrollDirection": "",
+              "scrollSnapX": "",
+              "scrollSnapY": "",
+              "checkedStateType": "literal",
+              "disabledStateType": "literal",
+              "states": "",
+              "localStyles": {
+                "objID": "8776ca13-9b0d-4527-c421-7d805226c34c"
+              },
+              "group": "",
+              "groupIndex": 0
+            },
+            {
+              "objID": "3edcc3f9-dee6-4ca3-ee03-a4d5caa615a6",
+              "type": "LVGLContainerWidget",
+              "left": 0,
+              "top": 126,
+              "width": 170,
+              "height": 130,
+              "customInputs": [],
+              "customOutputs": [],
+              "style": {
+                "objID": "1d7a5ac3-4164-467d-fe16-2a0c2f2b84ce",
+                "useStyle": "default",
+                "conditionalStyles": [],
+                "childStyles": []
+              },
+              "timeline": [],
+              "eventHandlers": [],
+              "leftUnit": "px",
+              "topUnit": "px",
+              "widthUnit": "px",
+              "heightUnit": "px",
+              "children": [
+                {
+                  "objID": "4b347bd1-b2fc-4382-a630-02668fa9cc67",
+                  "type": "LVGLLabelWidget",
+                  "left": 0,
+                  "top": 0,
+                  "width": 54,
+                  "height": 14,
+                  "customInputs": [],
+                  "customOutputs": [],
+                  "style": {
+                    "objID": "93aebb4c-9b4b-4e23-c730-d5c57ddba736",
+                    "useStyle": "default",
+                    "conditionalStyles": [],
+                    "childStyles": []
+                  },
+                  "timeline": [],
+                  "eventHandlers": [],
+                  "leftUnit": "px",
+                  "topUnit": "px",
+                  "widthUnit": "content",
+                  "heightUnit": "content",
+                  "children": [],
+                  "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+                  "hiddenFlagType": "literal",
+                  "clickableFlagType": "literal",
+                  "flagScrollbarMode": "",
+                  "flagScrollDirection": "",
+                  "scrollSnapX": "",
+                  "scrollSnapY": "",
+                  "checkedStateType": "literal",
+                  "disabledStateType": "literal",
+                  "states": "",
+                  "localStyles": {
+                    "objID": "c8f32102-372e-443b-c133-48c799775ca5",
+                    "definition": {
+                      "MAIN": {
+                        "DEFAULT": {
+                          "align": "TOP_MID",
+                          "text_font": "roboto_reg_14"
+                        }
+                      }
+                    }
+                  },
+                  "group": "",
+                  "groupIndex": 0,
+                  "text": "BL Delay",
+                  "textType": "literal",
+                  "longMode": "WRAP",
+                  "recolor": false
+                },
+                {
+                  "objID": "783eca08-6342-4137-9af4-f6ba50a3c8fe",
+                  "type": "LVGLLabelWidget",
+                  "left": 0,
+                  "top": 27,
+                  "width": 54,
+                  "height": 34,
+                  "customInputs": [],
+                  "customOutputs": [],
+                  "style": {
+                    "objID": "c8a0c3b9-188c-4e16-964e-d10a172c5b8e",
+                    "useStyle": "default",
+                    "conditionalStyles": [],
+                    "childStyles": []
+                  },
+                  "timeline": [],
+                  "eventHandlers": [],
+                  "leftUnit": "px",
+                  "topUnit": "px",
+                  "widthUnit": "content",
+                  "heightUnit": "content",
+                  "children": [],
+                  "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+                  "hiddenFlagType": "literal",
+                  "clickableFlagType": "literal",
+                  "flagScrollbarMode": "",
+                  "flagScrollDirection": "",
+                  "scrollSnapX": "",
+                  "scrollSnapY": "",
+                  "checkedStateType": "literal",
+                  "disabledStateType": "literal",
+                  "states": "",
+                  "localStyles": {
+                    "objID": "9027c76a-979f-4f50-ae8d-8c4901494630",
+                    "definition": {
+                      "MAIN": {
+                        "DEFAULT": {
+                          "align": "TOP_MID",
+                          "text_font": "roboto_med_48"
+                        }
+                      }
+                    }
+                  },
+                  "group": "",
+                  "groupIndex": 0,
+                  "text": "backlight_delay",
+                  "textType": "expression",
+                  "longMode": "WRAP",
+                  "recolor": false,
+                  "previewValue": "30"
+                },
+                {
+                  "objID": "fca356e3-6b90-4bd5-ae9c-9102cf3a0086",
+                  "type": "LVGLLabelWidget",
+                  "left": 0,
+                  "top": 70,
+                  "width": 52,
+                  "height": 14,
+                  "customInputs": [],
+                  "customOutputs": [],
+                  "style": {
+                    "objID": "96f20bd9-20e9-4f8e-d9ab-e655685742c5",
+                    "useStyle": "default",
+                    "conditionalStyles": [],
+                    "childStyles": []
+                  },
+                  "timeline": [],
+                  "eventHandlers": [],
+                  "leftUnit": "px",
+                  "topUnit": "px",
+                  "widthUnit": "content",
+                  "heightUnit": "content",
+                  "children": [],
+                  "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+                  "hiddenFlagType": "literal",
+                  "clickableFlagType": "literal",
+                  "flagScrollbarMode": "",
+                  "flagScrollDirection": "",
+                  "scrollSnapX": "",
+                  "scrollSnapY": "",
+                  "checkedStateType": "literal",
+                  "disabledStateType": "literal",
+                  "states": "",
+                  "localStyles": {
+                    "objID": "08a5212d-ca93-43fd-953f-131a147ebe3e",
+                    "definition": {
+                      "MAIN": {
+                        "DEFAULT": {
+                          "align": "TOP_MID",
+                          "text_font": "roboto_reg_14"
+                        }
+                      }
+                    }
+                  },
+                  "group": "",
+                  "groupIndex": 0,
+                  "text": "seconds",
+                  "textType": "literal",
+                  "longMode": "WRAP",
+                  "recolor": false
+                },
+                {
+                  "objID": "42ca9b55-7f61-4a4e-f938-425f6c9907e3",
+                  "type": "LVGLSliderWidget",
+                  "left": 15,
+                  "top": 100,
+                  "width": 140,
+                  "height": 15,
+                  "customInputs": [],
+                  "customOutputs": [],
+                  "style": {
+                    "objID": "e1da9377-ce5e-4e0c-e19c-4acf90d63b0c",
+                    "useStyle": "default",
+                    "conditionalStyles": [],
+                    "childStyles": []
+                  },
+                  "timeline": [],
+                  "eventHandlers": [],
+                  "leftUnit": "px",
+                  "topUnit": "px",
+                  "widthUnit": "px",
+                  "heightUnit": "px",
+                  "children": [],
+                  "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+                  "hiddenFlagType": "literal",
+                  "clickableFlag": true,
+                  "clickableFlagType": "literal",
+                  "flagScrollbarMode": "",
+                  "flagScrollDirection": "",
+                  "scrollSnapX": "",
+                  "scrollSnapY": "",
+                  "checkedStateType": "literal",
+                  "disabledStateType": "literal",
+                  "states": "",
+                  "localStyles": {
+                    "objID": "c2f47b9c-3668-48b9-d1fe-552577502250",
+                    "definition": {
+                      "INDICATOR": {
+                        "DEFAULT": {
+                          "bg_color": "victron"
+                        }
+                      },
+                      "KNOB": {
+                        "DEFAULT": {
+                          "bg_color": "victron"
+                        }
+                      }
+                    }
+                  },
+                  "group": "",
+                  "groupIndex": 0,
+                  "min": 5,
+                  "minType": "literal",
+                  "max": 100,
+                  "maxType": "literal",
+                  "mode": "NORMAL",
+                  "value": "backlight_delay",
+                  "valueType": "expression",
+                  "previewValue": 25,
+                  "valueLeft": 0,
+                  "valueLeftType": "literal",
+                  "previewValueLeft": 0,
+                  "enableAnimation": true
+                }
+              ],
+              "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+              "hiddenFlagType": "literal",
+              "clickableFlag": true,
+              "clickableFlagType": "literal",
+              "flagScrollbarMode": "",
+              "flagScrollDirection": "",
+              "scrollSnapX": "",
+              "scrollSnapY": "",
+              "checkedStateType": "literal",
+              "disabledStateType": "literal",
+              "states": "",
+              "localStyles": {
+                "objID": "59900a67-f07f-49ed-e2ed-af2343fd7a7c"
+              },
+              "group": "",
+              "groupIndex": 0
+            }
+          ],
+          "widgetFlags": "CLICKABLE|PRESS_LOCK|CLICK_FOCUSABLE|GESTURE_BUBBLE|SNAPPABLE|SCROLLABLE|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER",
+          "hiddenFlagType": "literal",
+          "clickableFlag": true,
+          "clickableFlagType": "literal",
+          "checkedStateType": "literal",
+          "disabledStateType": "literal",
+          "states": "",
+          "localStyles": {
+            "objID": "304bc46e-f92e-4439-bdb1-9f203336cc8e"
+          },
+          "groupIndex": 0
+        },
+        {
+          "objID": "118494f1-84d6-4cdf-a0e9-5a037786ac11",
+          "type": "LVGLActionComponent",
+          "left": 0,
+          "top": -91,
+          "width": 341,
+          "height": 53,
+          "customInputs": [],
+          "customOutputs": [],
+          "actions": [
+            {
+              "objID": "38865924-5cdb-4e70-e498-d2fe75553570",
+              "action": "changeToPreviousScreen",
+              "fadeMode": "MOVE_RIGHT",
+              "fadeModeType": "literal",
+              "speed": 50,
+              "speedType": "literal",
+              "delay": 0,
+              "delayType": "literal"
+            }
+          ]
+        }
+      ],
+      "connectionLines": [
+        {
+          "objID": "d22718ba-e181-4421-997f-e83440801e10",
+          "source": "07aecc8c-0b2d-4d03-d422-2675f8d0db80",
+          "output": "CLICKED",
+          "target": "118494f1-84d6-4cdf-a0e9-5a037786ac11",
+          "input": "@seqin"
+        }
+      ],
+      "localVariables": [],
+      "userProperties": [],
+      "name": "Config",
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 480,
+      "isUsedAsUserWidget": false,
       "createAtStart": true,
       "deleteOnScreenUnload": false
     }
@@ -2955,8 +4076,8 @@
       "descent": 4,
       "glyphs": [],
       "lvglRanges": "32,37,65-90,97-122",
-      "lvglSymbols": "",
-      "lvglBinFile": "MAAAAGhlYWQBAAAAAwAOAAsA/f8LAP3/AQD9/wsAAAAQAAAAAAgDBAUAAAABAAAAQAAAAGNtYXADAAAAPAAAACAAAAAGAAEAAgADAEAAAABBAAAAGgADABoAAgBAAAAAYQAAABoAHQAaAAIAAAAFAHwAAABsb2NhNwAAAAgACAALAHwA4gAyAZgB8wFDApMC+QJUA20DvQMYBGgE5AQ/BaUFAAZ4BtMGLgeUB/oHYAjyCFgJvgkZClQKrwrqCjoLdQuvC/8LTwxzDK4MCQ0iDYUNwA0DDl4Org7ZDhQPSQ+ED78PGhBVEKUQAADgEAAAZ2x5ZhgAAFAVYBD8emUgAAAAAAVawKsVwAIwoAAI9aAFOWASTcAABLtBbHUFWkCAAAAO3FkEV0jAAAAAAAAACfYgAAAAAAAAAPqkshu2QeAAAA8RCXdAcLAAAANbIa3woAm0YAANa+AKFoAvkMAAAAAAAHSc+MKgSBNgAAAFn+oAAAAAAAAQn7UgAAAAAAAbsX7BgAAAAAbe4dvLQAAAABHV4BF2QAAAAFyLYAbfQkAAB98hwAA8DKAAEt//Hx8f18AAnW5lBQUK36MpH0IAAAAAPE3UFsAAAAAAEfkASQ97H///vA6gGxGlBWz/ipsPAAAAF3N7DwAAABbzuw8AACk+57sf3///8wAbEogHqXxvGw8AAAAOfDsPAAAADty7EYSEqj0yex////1SIQBIE2AAB3ifPhRCYAAG3xIFp5lYoCAXlSAAAASf6AF/qYAAAAAQiET/5UAAAAAAAAWf5IAAAAAAAAT/5UAAAAAAAAF/qaAAAAAPJ4AXdMAAAAO/yEAGn1BlR9iYgCAACBk/fbOiIABJEXsf//7XRuAAGxHFBvKfB6AbDwAAABLagBsPAAAABT/lew8AAAAAP0pbDwAAAAAeC5sPAAAAAD8qew8AAAAFP+V7DwAAABMagDsRhIay/wegGx///nbGYAAAQQ97H//////tGxHFBQUFAhsPAAAAAAAbDwAAAAAAGw8AAAAAABsfnx8fGEAbEcUFBQPgGw8AAAAAABsPAAAAAAAbEYSEhISCOx//////74BBD3sf/////+qbEcUFBQUBuw8AAAAAABsPAAAAAAAbDwAAAAAAGx+fHx8T4BsRxQUFA0AbDwAAAAAAGw8AAAAAABsPAAAAAAAbDwAAAAAAAFATYAAIeP8+VMLAAAefccXHmXlgQBf1gAAAA/+pAX+qgAAAAA5HxN/l4AAAAAAABZ/lAAAAAAAABL/mQAN/Hx8QAP9LgACFBRqQgBY4YEAAABmQgAUeVOaFbF4tQAAFlv7fWk0AAFERew8AAAAAEBobDwAAAAAQGhsPAAAAABAaGw8AAAAAEBobDwAAAAAQGhsfnx8fHx+aGxHFBQUFEpobDwAAAAAQGhsPAAAAABAaGw8AAAAAEBobDwAAAAAQGgAhBXgSmBKYEpgSmBKYEpgSmBKYEpgSmBKAQA9gAAAAABWUgAAAAAAVlIAAAAAAFZSAAAAAABWUgAAAAAAVlIAAAAAAFZSAAAAAABWUgoLAAAAVtHLY4AAAGXII/+4lb3/HAA0b39trAABJEXsPAAAAEJ4Euw8AAAp/iSAbDwAF3o8gABsPAnv1ICAAGw+3uuFgAAAbHZ/9YuAAABsep7sWQAAAGxBgBp+MIAAbDwAAED5EABsPAAAAubfgWw8AAAAFPw4AQQ97DwAAAAAAGw8AAAAAABsPAAAAAAAbDwAAAAAAGw8AAAAAABsPAAAAAAAbDwAAAAAAGw8AAAAAABsPAAAAAAAbEYSEhISA+x//////5gBhF3se4eAAAAAAGn/iGx/sgAAAAAX//+IbG5gAAAAAEZvf4hsQ38PgAAB80T/iGw0Yr4AACL6Hn+IbDe0bAAAUVGcf4hsOwl8mwX6Ih9/iGw8AFZJrnGBIH+IbDwAJ/XfRAAgf4hsPAAC9f+UgCB/iGw8AABKZgAAIH+IAURF7GGAgAAAQGhsf64AAABAaGx3cwaAAEBobELzRIAAQGhsPC79FABAaGw8AOHcgEBobDwAGH6pQGhsPAAAS2/E6Gw8AAAI9nbobDwAAAA0f+hsPAAAAAFnaAFATYAAGmB890yHAAAW+s+dJmpiAYBa2wAAAAz6rAT9KQAAAABW0pT/lQAAAABC5Bh/kAAAAAA+aBR/lQAAAABDZAT9KQAAAABW0wBZ2wAAAAv6rYAWe04bo+flAgAAG2F8986IgAEkRex////4UYoAbEaUFCJp4QBsPAAAABv/luw8AAAAAv+mbDwAAAAQf51sPAAACNZxAux+fHx/6xkAbEcUFA0AAABsPAAAAAAAAGw8AAAAAAAAbDwAAAAAAAABQ06AAB7jfnZIhQAAHHzLHCluW4CAYtMAAAAR/aQK/6EAAAAAXkoc/40AAAAAStwgf4gAAAAARmAcf40AAAAAS1wKf6EAAAAAXkuAYVMAAAAQ/aWAHP1JGiXr3oCAAB9j/fv/sAAAAAAAAAA6fjWAAAAAAAAAJhQBJEXsf///cLwAgGxGlBWze7aAbDwAAABI6ABsPAAAADN2gGw8AAAAQusAbDwAAB34OgBsfnx9f8WBAGxHFBj2MwAAbDwAADd0hoBsPAAAAuzDgGw8AAAAJ/uQAQBFgAhNdf3nJQAAXGaglTv9nwn/oQAAAFdUh36wgAAAERaASnzGFoAAAAAAs29/5qIAAAAAAJ7VfyONmgAAAABZWa36hoAAAE5ehWvfoJUx+zOACs10fm03AAEATdR/////////hA0UFEdvFBQUAIAAADxqAAAAAAAAADxqAAAAAAAAADxqAAAAAAAAADxqAAAAAAAAADxqAAAAAAAAADxqAAAAAAAAADxqAAAAAAAAADxqAAAAAAAAADxqAAAAAAEgTYZ/ogAAABR/lAZ/ogAAABR/lAZ/ogAAABR/lAZ/ogAAABR/lAZ/ogAAABR/lAZ/ogAAABR/lAZ/ogAAABR/lAT/o4AAABX/koBzO4AAACz8hIA8eK+UKXLHgAAAue9+8L8CAAEgTdDjAAAAAABuSKZ/DAAAABd/ngP4MwAAAD9yAQBQ2wAAAGdIAAAmfIaAD3+cgAAD+CsAN3GAgAAAUNMAX0cAAAAAJfgMfhwAAAAAA3fScQCAAAAAAFB/xoAAAAAAACX/nAAAAAGAbbvrgAAAMHmCAAAnfYSgfwcAAFH/m4AAQeYABn6ggABybruAAFvJgABoO4ASfTjbgAB1LgAATFYAM+CSeYIP/5IAADBwAFS+gHIbqfYAgAAUf4v1HQBRu8PaAAAAAPe6+IIAMFvcvgAAAABb6diAABB38SIAAAAAQH+3AAAAb/8HAAAAACT/lQAAAE5pgAAAASBNn3+nAAAAP3mLgFZsgoANejwAABD7twBPbgOAAABCdyF/KIAAAAAGcvzegAAAAAAARX+rgAAAAAAJdvplAQAAAABKcxr9sAAAABb+MQBJc4aAAF7mAQAI9sQAKf+fAAAANvySAQBN0muBAAAAOfoKE/6ogAADcsQAAFLkAAAx+ooAABV/IQFsxQAAAABUXSj6i4AAAAAVf3BHAAAAAAAAVPuMAAAAAAAAPG4AAAAAAAAAPG4AAAAAAAAAPG4AAAAAAAAAPG4AAAAAAQBFqH///////84GlBQUFCj/qAAAAAAA4ViAAAAAADH6j4AAAAAK9roAAAAAAFDoAgAAAAAg/pwAAAAAA+zKAAAAAABAdAeAAAAAE/y+EhISEg80f///////6gEAPAAV3/z3yAIB8UsPIPiyAhoFAABYyoAY23X4fkwG9r4FgFZMHX+GgABgzAz9Rhk//8+AKnH8VcjTgQBFhn+eAAAAAAAGf54AAAAAAAZ/ngAAAAAABn/D7/3cCwAGf+gcnGnZgAZ/owAAIv8Hhn+eAAAJ/5kGf54AAAj/mQZ/ogAAHv6Hhn/gDItgV4AGf73vfdsLAADgPAAK1nv3yYMAYF2VnW/Cln+OgAAq1Ct3gAAAAAArd4AAAAAAFn+OgAAevwBhXBSb60GACtb790MBgQA9gAAAAAAwcgAAAAAAMHIAAAAAADByAA9f/etM8gBlY5mg7vIVf5UAADZyKXoAAAAwcil4gAAAMHIUf46AADVyAGLWCI/ncgAOX33rRvIA4DwAB9J7d8eCAFjgFZvwuxN/koAAOeYq//p6enxyq/oSEhISEJf/k4AAAYUAX2WaktJMAAlSenrUigCgLYAAQHdpAB1/sBOAM26AAEp///+2ArdtBAGANGwAAAA0bAAAADRsAAAANGwAAAA0bAAAADRsAAABAr2AEGD868V0AGVYCA7l9BV/kAAAMnQpeYAAAC50KXoAAAAudBT/lYAANfQAY2Iaoe/0AA7f/mtNc4AEAAAAPGoAXzuQo3U+ABle/HZFggEAPYR/ngAAAAAEf54AAAAABH+eAAAAAAR/uGj+YYyEf+yfG25KhH+mgABC4QR/noAAPmQEf54AAD5kBH+eAAA+ZAR/ngAAPmQEf54AAD5kAGAdgXIsADeSAAAAAHgsAHgsAHgsAHgsAHgsAHgsAHgsAHgsAH6nAAh2H4ABuwwAAAAAAAB/ogAAf6IAAH+iAAB/ogAAf6IAAH+iAAB/ogAAf6IAAH+hiaX/ljX9TwAA4EWEf54AAAAAAAR/ngAAAAAABH+eAAAAAAAEf54AIXwqAAR/nhX4O4AABH+pcE2AAAAEf/N/jAAAAAR/52hVgAAABH+hFnwuAAAEf54AOXgPAAR/ngABX96BAGQV+Cx4LHgseCx4LHgseCx4LHgseCx4LAGAZAZ/vu793hJUfHY4AAZ/0oaMa3srgap/EAZ/oAAAQ+gAAAB6JwZ/nAAAQGIAAAB4KgZ/nAAAQGIAAAB4KgZ/nAAAQGIAAAB4KgZ/nAAAQGIAAAB4KgZ/nAAAQGIAAAB4KgEAPAR/tet+YYyEf+CMiWZKhH+hgABAYQR/ngAAPmQEf54AAD5kBH+eAAA+ZAR/ngAAPmQEf54AAD5kAQBEAAfRevpQBwAAW+UYmOZYgBT/lAAAFv+SrHYAAAAAeCos9gAAAAB4KhT/k4AAFf+SgFvkmJjlWQAAB9F6+tEHAAECxYZ/vu9924sABn/WCI1mWQAGf5+AACL+h4Z/ngAAC/+ZBn+eAAAMf5kGf6AAACh+B4Z/3xSa7dUABn/Ib33bCgAGf54AAAAAAAZ/ngAAAAAABn+eAAAAAAABAr2AEOD760pyAGdXhYphchZ/kAAAMnIpeYAAADByKXoAAAAwchV/lYAANXIAZWIVmmvyAA/f/mzQ8gAAAAAAMHIAAAAAADByAAAAAAAwcgCgLAR/xPdDBH/inIwEf6IAAAR/noAABH+eAAAEf54AAAR/ngAABH+eAAAA4DwAGmT98rcAAfPIEC5+nwb/owAALRgARXvXsweAAAATueH1ExXCAIAA6MAOfEGQIXetgCNpfnNAAQCgLQBKWAAAAEpYAAB4f///iARMWgQAgEpYAAAASlgAAABKWAAAAEpYAAAAQusYgoATbvwKgQA8CH+aAABCYgh/mgAAQmIIf5oAAEJiCH+aAABCYgh/mgAAQmIFf52AAENiAGtKAxdwYgAe7P5l1GIA4DxO1wAAAXQupHqEgBv8h4J2pYBB2YAATk0AZ66AACJzDnwIAAACdc9aAAAAAEz/r4AAAAAifQiAAAFgXElYAAA08YCAF36Ip3WAgFn/lwA15QAHfZYD+Vc8gFNCgABitKNiqGCAcSAAAEBTyD2Gepf6gwAAHfJsmABc19uAAAACeXMAgDb/uYAAAABZTwAAEP+XAAAA4Dwq+4+AG/8ggFzTAOLSAAAS+8Z4DAAAAED/tYAAAABIf72AAAAYfTh7EQABZE6AV1uANHkLgBJ9KgDivdZYAAAI/iUre4WALHgDBXopAFFRgABT0QF1pwAAKHce+YOAAAP44tMAAAAAUX+pAAAAACl6hIAAAAA81QAAAAok9KSAAAAy+0SAAAAAAOA8LH//////pAUODg5T7YWAAAAi/ZwAAAAJcsEAAAAAU+YCgAAALXsTgAAADnfDDg4OBrJ//////7wA=",
+      "lvglSymbols": ":",
+      "lvglBinFile": "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",
       "lvglGlyphs": {
         "encodings": [
           {
@@ -3174,14 +4295,35 @@
       "alwaysBuild": false,
       "lvglBinaryOutputFormat": 3,
       "lvglDither": false
+    },
+    {
+      "objID": "00b98e49-ed37-4856-dc62-2e3751b8ae69",
+      "name": "settings",
+      "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAC2klEQVR4AcyUzWsTURTFZ5J2YV2JuukX9A+Q2irVgJuIxYUYd8G6EhcWquLHoju1iiCC0C6MqLhxVckuKCKiKLoIWKv5A2IgnwvB7qybJOPvPN6MySSB2QiGObnn3nvevfPuzJuY849//0eDcrk8X61WvU4oFmXzkXYQi8XehIv1i4U18iM1kFCYmJhwBfGo6GlQq9VyGkWlUsl5nheDfxlUDO2mNNKi82TD2q4GCI6zICWR67opCrTgB4CuDf1ZGI52VhppFZdVDXEfXQ0QvFai2WzOsHhNHPzUWMAc3FziwMXZAg7aVdbOiGNNDXEhaFCv188pgODX1NRUYXJy8qqKgD2KC4zhPLqlbDYbl09uN3DRXhsfHy8Q+w0cdnVWVggaULioAHezE8GiuA+2fZriHv7jdrudSSQSTfyb+MElDc4O4KD5LisEDUZHRz9SPKMg9hEFPosLNF+XDWGl0WiMKIb2Q4fmATv6pLgQNJBD4iLFb4iD98BhJKdk+6HVai0rzhr/oV9nZJcU89HVwA9aa3IUse5gw6HTA3fYRTOsMkX8IHPMILptffN6squc9XtMsVi8oyA7mJUFdxnXPWxwBQ2Y5xGKLynDggW2elRcwD8jG8JKMpk0dywtmgWbX6bJPsudoAHv/mEb3Oaun1tuDP46RTSGRcZxIZ/PD+HfMkn7h0Zrtq17yNq/DRDct8GRUqk0zau6xp142B827lD0ydjY2MN0Oq0T7pDfAtKsotuPzrxV6J7CzRXswHiOc0J2eHi4wJYvi2P3qgj4Kl+AF4DOxS75aK6Ab+LxePygrI+uBnR+ReIl0BvxgtOpE6sTqpD5FIiAaaBrA80Qxd/K4Rk+4zxtivvoaqAgTU4Cl4UpFrThnYUlCUBuDk2L8c7DtSb4RPiingZ+op/VWIR+uUGxSA24y2PhAsSC1zic6/QjNWBc7zSCThAzn5LOYv14pAb9FkaN/QEAAP//PO08twAAAAZJREFUAwA1fkhAYYSiOgAAAABJRU5ErkJggg==",
+      "bpp": 1,
+      "alwaysBuild": false,
+      "lvglBinaryOutputFormat": 3,
+      "lvglDither": false
     }
   ],
-  "colors": [],
+  "colors": [
+    {
+      "objID": "935fdaf5-5968-4d5e-9d05-92ebeccd8f19",
+      "name": "background"
+    },
+    {
+      "objID": "0c49f1f2-2a11-4ce3-b4dd-cb5bcda8207c",
+      "name": "victron"
+    }
+  ],
   "themes": [
     {
       "objID": "ed882da1-8496-e314-059f-7473f6a898ba",
       "name": "Default",
-      "colors": []
+      "colors": [
+        "#000000",
+        "#4789d0"
+      ]
     }
   ]
 }

@@ -3,7 +3,7 @@ use std::ffi::CString;
 use std::hash::Hash;
 use std::slice;
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self};
 use std::time::{Duration, Instant};
 
@@ -26,7 +26,7 @@ use log::{debug, error, info, warn};
 use victron_ble::{DeviceState, ErrorState, Mode};
 
 use crate::devices::*;
-use crate::ui::{self, LAST_TOUCH, ON_DURATION};
+use crate::ui::{self, ON_DURATION};
 
 type VicBtDriver = BtDriver<'static, Ble>;
 type VicEspBleGap = Arc<EspBleGap<'static, Ble, Arc<VicBtDriver>>>;
@@ -44,6 +44,8 @@ const INV_CTRL_CHARACTERISITIC_UUID: BtUuid = BtUuid::uuid128(0x306b0003b0814037
 const TURN_ON_INVERTER: [u8; 8] = [0x06, 0x03, 0x82, 0x19, 0x02, 0x00, 0x41, 0x03];
 // const TURN_ON_INVERTER: [u8; 8] = [0x03, 0x41, 0x00, 0x02, 0x19, 0x82, 0x03, 0x06];
 const TURN_OFF_INVERTER: [u8; 8] = [0x06, 0x03, 0x82, 0x19, 0x02, 0x00, 0x41, 0x04];
+
+static DEBOUNCE_INV_SWITCH: RwLock<Option<Instant>> = RwLock::new(None);
 
 #[derive(Eq, PartialEq)]
 struct BdAddrKey(BdAddr);
@@ -205,18 +207,17 @@ impl Client {
                     }
                 }
                 GapSearchEvent::InquiryComplete(num) => {
-                    let mut state = self.state.lock().unwrap();
-                    state.scanning = false;
                     info!("Scan timeout, completed. Found {num}");
+                    self.state.lock().unwrap().scanning = false;
 
-                    if let Some(last_touch) = *LAST_TOUCH.read().unwrap() {
-                        if Instant::now().duration_since(last_touch) < ON_DURATION {
-                            if !state.connect && !state.scanning {
-                                self.gap.start_scanning(ON_DURATION.as_secs() as _)?;
-                                info!("Recently touched, start scan after timeout on");
-                            }
+                    if ON_DURATION.recent_touch() {
+                        // if let Some(last_touch) = *LAST_TOUCH.read().unwrap() {
+                        //     if Instant::now().duration_since(last_touch) < ON_DURATION {
+                        if self.start_scanning()? {
+                            info!("Recently touched, start scan after timeout on");
                         }
                     }
+                    // }
                 }
                 _ => {
                     info!("Got unsupported scan search {search_evt:?}")
@@ -305,7 +306,7 @@ impl Client {
                                 Ok(DeviceState::VeBus(device_state)) => {
                                     debug!("Read VeBus: {device_state:?} ");
                                     // Give it a few seconds after switching the inverter before reading state again
-                                    let last_switch_lock = ui::DEBOUNCE_INV_SWITCH.read().unwrap();
+                                    let last_switch_lock = DEBOUNCE_INV_SWITCH.read().unwrap();
                                     let last_switch = last_switch_lock.as_ref();
 
                                     if last_switch.is_none_or(|when| {
@@ -341,7 +342,7 @@ impl Client {
 
                                         if last_switch.is_some() {
                                             drop(last_switch_lock);
-                                            ui::DEBOUNCE_INV_SWITCH.write().unwrap().take();
+                                            DEBOUNCE_INV_SWITCH.write().unwrap().take();
                                         }
                                     }
 
@@ -524,25 +525,6 @@ impl Client {
                 let state = self.state.lock().unwrap();
 
                 if let Some((start_handle, end_handle)) = state.service_start_end_handle {
-                    // info!("Getting attr count");
-                    // let count = match self.gattc.get_attr_count(
-                    //     gattc_if,
-                    //     conn_id,
-                    //     DbAttrType::Characteristic {
-                    //         start_handle,
-                    //         end_handle,
-                    //     },
-                    // ) {
-                    //     Ok(count) => count,
-                    //     Err(status) => {
-                    //         error!("get attr count error for service {status:?}");
-                    //         0
-                    //     }
-                    // };
-
-                    // info!("Service characteristic count {count}");
-
-                    // if count > 0 {
                     let mut chars = [CharacteristicElement::new(); 1];
                     match self.gattc.get_characteristic_by_uuid(
                         gattc_if,
@@ -556,11 +538,6 @@ impl Client {
                             info!("Found inv ctrl len {chars_count}");
                             if chars_count > 0 {
                                 if let Some(inv_ctrl_char_elem) = chars.first() {
-                                    // if inv_ctrl_char_elem
-                                    //     .properties()
-                                    //     .contains(Property::WriteNoResponse)
-                                    // {
-
                                     info!("Inverter ctrl handle {}", inv_ctrl_char_elem.handle());
 
                                     let command = if ui::INVERTER_ON
@@ -581,13 +558,6 @@ impl Client {
                                         GattWriteType::NoResponse,
                                         GattAuthReq::Mitm,
                                     )?;
-
-                                    // self.gattc.close(gattc_if, conn_id)?;
-
-                                    // Let main loop send write
-                                    // info!("WRITE ON INVERTER and disco");
-                                    //    self.condvar.notify_all();
-                                    // }
                                 }
                             } else {
                                 error!("No inv ctrl characteristic found");
@@ -597,9 +567,6 @@ impl Client {
                             error!("get inv ctrl characteristic error {status:?}");
                         }
                     };
-                    // } else {
-                    //     error!("No characteristics found");
-                    // }
                 };
             }
 
@@ -621,10 +588,7 @@ impl Client {
                 state.conn_id = None;
                 state.service_start_end_handle = None;
 
-                ui::DEBOUNCE_INV_SWITCH
-                    .write()
-                    .unwrap()
-                    .replace(Instant::now());
+                DEBOUNCE_INV_SWITCH.write().unwrap().replace(Instant::now());
 
                 info!("Disconnected, remote {addr}, reason {reason:?}");
                 self.gap.start_scanning(ON_DURATION.as_secs() as _)?;
@@ -644,23 +608,24 @@ impl Client {
         }
     }
 
-    pub fn backlight_handler(&self, backlight_on_rx: Receiver<bool>) {
-        let backlight_client = self.clone();
+    pub fn start_scanning(&self) -> Result<bool, EspError> {
+        let state = self.state.lock().unwrap();
+        if !state.connect && !state.scanning {
+            self.gap.start_scanning(ON_DURATION.as_secs() as _)?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
 
-        thread::spawn(move || loop {
-            let _ = backlight_on_rx.recv().unwrap();
-            info!("Touched!!!");
-
-            let state = backlight_client.state.lock().unwrap();
-            if !state.connect && !state.scanning {
-                let _ = backlight_client
-                    .gap
-                    .start_scanning(ON_DURATION.as_secs() as _);
-                info!("Start scan after BL on");
-            }
-
-            thread::sleep(Duration::from_millis(20));
-        });
+    pub fn stop_scanning(&self) -> Result<bool> {
+        let state = self.state.lock().unwrap();
+        if state.scanning {
+            self.gap.stop_scanning()?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 
     fn check_esp_status(status: Result<(), EspError>) {

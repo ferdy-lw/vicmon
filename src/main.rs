@@ -5,6 +5,7 @@ use std::thread::{self};
 use std::time::Duration;
 
 use esp_idf_svc::bt::ble::gatt::client::EspGattc;
+use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::sys::lcd_bindings::{
     lvgl_port_lock, lvgl_port_unlock, ui_init, ui_tick, waveshare_esp32_s3_rgb_lcd_init,
 };
@@ -16,13 +17,20 @@ use esp_idf_svc::bt::BtDriver;
 use esp_idf_svc::hal::peripherals::Peripherals;
 // use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::nvs::EspDefaultNvsPartition;
+use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use log::info;
 
 mod client;
 mod devices;
+mod http;
 mod ui;
+mod wifi;
 
 use client::Client;
+use http::server::HttpServer;
+use wifi::Wifi;
+
+use crate::ui::ui::{setup_backlight, subscribe_ui_events};
 
 fn main() -> Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -31,9 +39,19 @@ fn main() -> Result<()> {
     ::log::set_max_level(log::LevelFilter::Debug);
 
     let peripherals = Peripherals::take()?;
+    let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
 
-    let bt = Arc::new(BtDriver::new(peripherals.modem, Some(nvs.clone()))?);
+    let (wifi_modem, bt_modem) = peripherals.modem.split();
+
+    let wifi = Wifi::new(BlockingWifi::wrap(
+        EspWifi::new(wifi_modem, sys_loop.clone(), Some(nvs.clone()))?,
+        sys_loop.clone(),
+    )?)?;
+
+    let _server = HttpServer::new()?;
+
+    let bt = Arc::new(BtDriver::new(bt_modem, Some(nvs.clone()))?);
 
     let client = Client::new(
         Arc::new(EspBleGap::new(bt.clone())?),
@@ -50,27 +68,27 @@ fn main() -> Result<()> {
     unsafe {
         waveshare_esp32_s3_rgb_lcd_init(); // calls port init (which creates timer task) and tick init
     }
-    info!("lcd init");
+    info!("LCD init");
 
-    let backlight_on_rx = unsafe {
+    setup_backlight(sys_loop.clone());
+    info!("LCD backlight controller started");
+
+    unsafe {
         if lvgl_port_lock(-1) {
             ui_init();
-            info!("ui init");
+            info!("UI init");
 
-            let backlight_on_rx = ui::setup_backlight();
+            subscribe_ui_events(&sys_loop, client.clone(), wifi)?;
+            info!("UI event subscriptions initialized");
+
+            // let backlight_on_rx = setup_backlight(sys_loop.clone());
+            // setup_backlight(sys_loop.clone());
+            // client.backlight_handler(backlight_on_rx);
+            // info!("Client backlight handler started");
 
             lvgl_port_unlock();
-
-            Some(backlight_on_rx)
-        } else {
-            None
         }
     };
-
-    if let Some(backlight_on_rx) = backlight_on_rx {
-        client.backlight_handler(backlight_on_rx);
-        info!("Client backlight handler started");
-    }
 
     client.start()?;
     info!("Vicmon app started");

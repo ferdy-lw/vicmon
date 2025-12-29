@@ -31,7 +31,8 @@ thiserror = "2.0"
 heapless = "0.9"
 circular-buffer = "1.2"
 victron_ble = {version = "1.0.0",  default-features = false, features = ["serde"] }
-serde = { version = "1.0", features = ["derive"]}
+serde = { version = "1.0", default-features = false, features = ["derive"]}
+serde_json = { version = "1", default-features = false, features = ["alloc"] }
 embassy-sync = "0.7"
 esp-idf-svc = {version = "0.51", features = ["experimental", "embassy-sync"] }
 # Remove following when the esp-idf-svc ble fixes are applied
@@ -61,8 +62,8 @@ embuild = "0.33"
 [patch.crates-io]
 # esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc" }
 esp-idf-svc = { path = "../esp-idf-svc" }
-esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys" }
-esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf-hal" }
+esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys", rev = "a97dd46f" }
+esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf-hal", rev = "15e197e2" }
 
 #esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc.git" }
 

@@ -46,6 +46,10 @@ extern const char *get_var_solar_mode();
 extern void set_var_solar_mode(const char *value);
 extern const char *get_var_solar_error();
 extern void set_var_solar_error(const char *value);
+extern const char *get_var_ip_addr();
+extern void set_var_ip_addr(const char *value);
+extern int32_t get_var_backlight_delay();
+extern void set_var_backlight_delay(int32_t value);
 
 
 #ifdef __cplusplus
