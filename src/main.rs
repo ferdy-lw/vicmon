@@ -12,8 +12,8 @@ use esp_idf_svc::sys::lcd_bindings::{
 
 use anyhow::Result;
 
-use esp_idf_svc::bt::ble::gap::EspBleGap;
 use esp_idf_svc::bt::BtDriver;
+use esp_idf_svc::bt::ble::gap::EspBleGap;
 use esp_idf_svc::hal::peripherals::Peripherals;
 // use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::nvs::EspDefaultNvsPartition;
@@ -30,6 +30,7 @@ use client::Client;
 use http::server::HttpServer;
 use wifi::Wifi;
 
+use crate::devices::DEVICES;
 use crate::ui::ui::{setup_backlight, subscribe_ui_events};
 
 fn main() -> Result<()> {
@@ -41,6 +42,15 @@ fn main() -> Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
+
+    //-------
+    // Config
+    //-------
+    DEVICES.write().unwrap().load_from_nvs(nvs.clone());
+    info!(
+        "Config loaded. Found {}",
+        DEVICES.read().unwrap().num_devices()
+    );
 
     let (wifi_modem, bt_modem) = peripherals.modem.split();
 

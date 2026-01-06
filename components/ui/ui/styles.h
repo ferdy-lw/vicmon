@@ -29,6 +29,11 @@ lv_style_t *get_style_labels_error_MAIN_DEFAULT();
 void add_style_labels_error(lv_obj_t *obj);
 void remove_style_labels_error(lv_obj_t *obj);
 
+// Style: Device_Config
+lv_style_t *get_style_device_config_MAIN_DEFAULT();
+void add_style_device_config(lv_obj_t *obj);
+void remove_style_device_config(lv_obj_t *obj);
+
 
 
 #ifdef __cplusplus

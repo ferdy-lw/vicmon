@@ -1,15 +1,13 @@
-use std::collections::HashMap;
 use std::ffi::CString;
-use std::hash::Hash;
 use std::slice;
-use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
+use std::sync::mpsc::{Receiver, SyncSender, sync_channel};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self};
 use std::time::{Duration, Instant};
 
 use esp_idf_svc::bt::ble::gatt::client::{
     CharacteristicElement, ConnectionId, EspGattc, GattAuthReq, GattCreateConnParams,
-    GattWriteType, GattcEvent, ServiceSource,
+    GattWriteType, GattcEvent, ServiceElement, ServiceSource,
 };
 use esp_idf_svc::bt::ble::gatt::{GattInterface, GattStatus, Handle};
 use esp_idf_svc::sys::*;
@@ -42,19 +40,9 @@ const SERVICE_UUID: BtUuid = BtUuid::uuid128(0x306b0001b081403783dce59fcc3cdfd0)
 const INV_CTRL_CHARACTERISITIC_UUID: BtUuid = BtUuid::uuid128(0x306b0003b081403783dce59fcc3cdfd0);
 
 const TURN_ON_INVERTER: [u8; 8] = [0x06, 0x03, 0x82, 0x19, 0x02, 0x00, 0x41, 0x03];
-// const TURN_ON_INVERTER: [u8; 8] = [0x03, 0x41, 0x00, 0x02, 0x19, 0x82, 0x03, 0x06];
 const TURN_OFF_INVERTER: [u8; 8] = [0x06, 0x03, 0x82, 0x19, 0x02, 0x00, 0x41, 0x04];
 
 static DEBOUNCE_INV_SWITCH: RwLock<Option<Instant>> = RwLock::new(None);
-
-#[derive(Eq, PartialEq)]
-struct BdAddrKey(BdAddr);
-
-impl Hash for BdAddrKey {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.raw().hash(state);
-    }
-}
 
 struct ScanData {
     bda: BdAddr,
@@ -82,19 +70,12 @@ pub struct Client {
 
 impl Client {
     pub fn new(gap: VicEspBleGap, gattc: VicEspGattc) -> Self {
-        let bda_to_key = HashMap::from([
-            (BdAddrKey(INVERTER_ADDR), INVERTER_KEY),
-            (BdAddrKey(MPPT_ADDR), MPPT_KEY),
-            // DC not supported in decryption
-            // (BdAddrKey(DC_DC_ADDR), DC_DC_KEY),
-            (BdAddrKey(BMV_ADDR), BMV_KEY),
-        ]);
-
         let (tx, rx) = sync_channel(2);
 
         let _ = thread::Builder::new()
+            .name("adv_decoder".to_owned())
             .stack_size(5096)
-            .spawn(move || Client::decode_advertisement(bda_to_key, rx));
+            .spawn(move || Client::decode_advertisement(rx));
         info!("Start Adv Decoder");
 
         let security_conf = SecurityConfiguration {
@@ -144,8 +125,9 @@ impl Client {
         match event {
             BleGapEvent::PasskeyRequest => {
                 let state = self.state.lock().unwrap();
-                if let Some(addr) = state.remote_addr {
-                    let passkey = 123456;
+                if let Some(addr) = state.remote_addr
+                    && let Some(passkey) = DEVICES.read().unwrap().get_pin(addr)
+                {
                     esp!(unsafe {
                         esp_ble_passkey_reply(&addr.raw() as *const _ as *mut _, true, passkey)
                     })?;
@@ -178,16 +160,11 @@ impl Client {
                     ble_addr_type,
                     ..
                 }) => {
-                    let ble_adv = ble_adv.map(|d| d.to_owned());
-                    let scan_data = ScanData {
-                        bda: bda.into(),
-                        ble_adv: ble_adv,
-                        data_len: adv_data_len as usize + scan_rsp_len as usize,
-                    };
-
+                    // If the inverter switch has been changed and we scanned the inverter
+                    // then connect to it
                     if ui::INVERTER_PREV.load(std::sync::atomic::Ordering::Relaxed)
                         != ui::INVERTER_ON.load(std::sync::atomic::Ordering::Relaxed)
-                        && bda == INVERTER_ADDR
+                        && *DEVICES.read().unwrap().device_addr(DeviceType::Inverter) == bda
                     {
                         info!("Inverter found, changing state");
 
@@ -203,7 +180,11 @@ impl Client {
                             self.gattc.enh_open(state.gattc_if.unwrap(), &conn_params)?;
                         }
                     } else {
-                        let _ = self.tx.send(scan_data);
+                        let _ = self.tx.send(ScanData {
+                            bda: bda.into(),
+                            ble_adv: ble_adv.map(|d| d.to_owned()),
+                            data_len: adv_data_len as usize + scan_rsp_len as usize,
+                        });
                     }
                 }
                 GapSearchEvent::InquiryComplete(num) => {
@@ -211,13 +192,10 @@ impl Client {
                     self.state.lock().unwrap().scanning = false;
 
                     if ON_DURATION.recent_touch() {
-                        // if let Some(last_touch) = *LAST_TOUCH.read().unwrap() {
-                        //     if Instant::now().duration_since(last_touch) < ON_DURATION {
                         if self.start_scanning()? {
                             info!("Recently touched, start scan after timeout on");
                         }
                     }
-                    // }
                 }
                 _ => {
                     info!("Got unsupported scan search {search_evt:?}")
@@ -241,7 +219,7 @@ impl Client {
         Ok(())
     }
 
-    fn decode_advertisement(bda_to_key: HashMap<BdAddrKey, [u8; 16]>, rx: Receiver<ScanData>) {
+    fn decode_advertisement(rx: Receiver<ScanData>) {
         fn get_manufacturer_data(ble_adv: &[u8], adv_data_len: usize) -> Option<&[u8]> {
             if adv_data_len > 0 {
                 let mut length: u8 = 0;
@@ -271,7 +249,7 @@ impl Client {
 
                 if let Some(man_data) = manufacturer_data {
                     if man_data[0..2] == VICTRON && man_data[2] == 0x10 {
-                        if let Some(key) = bda_to_key.get(&BdAddrKey(result.bda)) {
+                        if let Some(key) = DEVICES.read().unwrap().get_key(result.bda) {
                             match victron_ble::parse_manufacturer_data(&man_data[2..], key) {
                                 Ok(DeviceState::SolarCharger(device_state)) => {
                                     debug!("Read mppt: {device_state:?} ");
@@ -468,20 +446,20 @@ impl Client {
                     .search_service(gattc_if, conn_id, Some(&SERVICE_UUID))?;
                 info!("search for {:?}", Some(SERVICE_UUID));
 
-                // let mut results = [ServiceElement::new(); 5];
-                // let size = self.gattc.get_service(
-                //     gattc_if,
-                //     conn_id,
-                //     // None,
-                //     Some(&SERVICE_UUID),
-                //     0,
-                //     &mut results,
-                // )?;
+                let mut results = [ServiceElement::new(); 5];
+                let size = self.gattc.get_service(
+                    gattc_if,
+                    conn_id,
+                    // None,
+                    Some(&SERVICE_UUID),
+                    0,
+                    &mut results,
+                )?;
 
-                // info!("Get service Found {size}");
-                // for service in results[..size].iter() {
-                //     info!("{:?}", service);
-                // }
+                info!("Get service Found {size}");
+                for service in results[..size].iter() {
+                    info!("{:?}", service);
+                }
             }
             GattcEvent::Mtu { status, mtu, .. } => {
                 info!("MTU exchange, status {status:?}, MTU {mtu}");
@@ -493,7 +471,10 @@ impl Client {
                 srvc_id,
                 is_primary,
             } => {
-                info!("Service search result, conn_id {conn_id}, is primary service {is_primary}, start handle {start_handle}, end handle {end_handle}, current handle value {}", srvc_id.inst_id);
+                info!(
+                    "Service search result, conn_id {conn_id}, is primary service {is_primary}, start handle {start_handle}, end handle {end_handle}, current handle value {}",
+                    srvc_id.inst_id
+                );
 
                 if srvc_id.uuid == SERVICE_UUID {
                     info!("Service found, uuid {:?}", srvc_id.uuid);

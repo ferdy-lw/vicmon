@@ -1,13 +1,13 @@
 {
   "navigation": {
     "selectedUserPageObject": "[vicmon.eez-project]:/userPages/1",
-    "selectedActionObject": "[vicmon.eez-project]:/actions/-1",
-    "selectedGlobalVariableObject": "[vicmon.eez-project]:/variables/globalVariables/14",
-    "selectedStyleObject": "[vicmon.eez-project]:/lvglStyles/styles/1",
+    "selectedActionObject": "[vicmon.eez-project]:/actions/0",
+    "selectedGlobalVariableObject": "[vicmon.eez-project]:/variables/globalVariables/17",
+    "selectedStyleObject": "[vicmon.eez-project]:/lvglStyles/styles/4",
     "selectedThemeObject": "[vicmon.eez-project]:/themes/0",
     "selectedThemeColorObject": "[vicmon.eez-project]:/colors/1",
     "selectedFontObject": "[vicmon.eez-project]:/fonts/0",
-    "selectedBitmapObject": "[vicmon.eez-project]:/bitmaps/8",
+    "selectedBitmapObject": "[vicmon.eez-project]:/bitmaps/9",
     "subnavigationSelectedItems": {
       "variables-tab/sub-navigation/selected-item": "Global"
     }
@@ -30,6 +30,7 @@
           },
           {
             "type": "border",
+            "selected": 1,
             "size": 159.03125,
             "location": "right",
             "children": [
@@ -195,17 +196,74 @@
                       "enableClose": false,
                       "icon": "svg:variable"
                     }
-                  ]
+                  ],
+                  "active": true
                 }
               ]
             },
             {
               "type": "tabset",
               "id": "EDITORS",
-              "weight": 66.57514450867052,
+              "weight": 65.26096822995461,
+              "selected": 6,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
               "children": [
+                {
+                  "type": "tab",
+                  "id": "#9ebfb1bd-0021-40af-897c-340a17eeb8e1",
+                  "name": "roboto_reg_32",
+                  "component": "editor",
+                  "config": {
+                    "objectPath": "[vicmon.eez-project]:/fonts/1",
+                    "permanent": true
+                  },
+                  "icon": "material:font_download"
+                },
+                {
+                  "type": "tab",
+                  "id": "#c14d4f4d-c3b3-4d08-a6f7-f69c7939512b",
+                  "name": "roboto_med_18",
+                  "component": "editor",
+                  "config": {
+                    "objectPath": "[vicmon.eez-project]:/fonts/3",
+                    "permanent": true
+                  },
+                  "icon": "material:font_download"
+                },
+                {
+                  "type": "tab",
+                  "id": "#4a82af82-72cd-43c3-a8f4-75887b11a4f7",
+                  "name": "roboto_med_22",
+                  "component": "editor",
+                  "config": {
+                    "objectPath": "[vicmon.eez-project]:/fonts/4",
+                    "permanent": true
+                  },
+                  "icon": "material:font_download"
+                },
+                {
+                  "type": "tab",
+                  "id": "#84aefda3-441f-45f2-a02a-5e6109e8aa2b",
+                  "name": "solar_highlight",
+                  "component": "editor",
+                  "config": {
+                    "objectPath": "[vicmon.eez-project]:/actions/0",
+                    "permanent": false
+                  },
+                  "icon": "material:code"
+                },
+                {
+                  "type": "tab",
+                  "id": "#7a9acb36-d428-4d29-b138-570190c2d979",
+                  "name": "roboto_reg_14",
+                  "component": "editor",
+                  "config": {
+                    "objectPath": "[vicmon.eez-project]:/fonts/0",
+                    "permanent": true
+                  },
+                  "icon": "material:font_download"
+                },
                 {
                   "type": "tab",
                   "id": "#b95924dd-0791-4d44-87a1-19ef76c05964",
@@ -228,13 +286,12 @@
                   },
                   "icon": "svg:page"
                 }
-              ],
-              "active": true
+              ]
             },
             {
               "type": "tabset",
               "id": "#4a9a684e-36e0-4a34-97ac-82e2680b0e50",
-              "weight": 18.42485549132948,
+              "weight": 19.739031770045386,
               "children": [
                 {
                   "type": "tab",
@@ -1000,13 +1057,21 @@
     "[vicmon.eez-project]:/userPages/0[flow-state]": {
       "selection": {
         "0": {
+          "1": {
+            "0": {
+              "$selected": true
+            },
+            "3": {
+              "1": {}
+            }
+          },
           "2": {}
         }
       },
       "transform": {
         "translate": {
-          "x": -285.963715057373,
-          "y": -240
+          "x": -400,
+          "y": -120
         },
         "scale": 1
       },
@@ -1019,11 +1084,12 @@
     },
     "[vicmon.eez-project]:/lvglStyles/styles[tree-state]": {
       "0": {},
-      "1": {
-        "$selected": true
-      },
+      "1": {},
       "2": {},
-      "3": {}
+      "3": {},
+      "4": {
+        "$selected": true
+      }
     },
     "[vicmon.eez-project]:/userPages/1[flow-state]": {
       "selection": {
@@ -1031,7 +1097,15 @@
           "1": {
             "0": {}
           },
-          "2": {}
+          "2": {
+            "0": {}
+          },
+          "3": {
+            "0": {},
+            "4": {}
+          },
+          "4": {},
+          "5": {}
         }
       },
       "transform": {
@@ -1049,10 +1123,40 @@
       }
     },
     "[vicmon.eez-project]:/actions/0[flow-state]": {
-      "selection": {},
+      "selection": {
+        "0": {
+          "$selected": true
+        }
+      },
       "transform": {
         "translate": {
           "x": 0,
+          "y": 0
+        },
+        "scale": 1
+      }
+    },
+    "[vicmon.eez-project]:/userWidgets/0[flow-state]": {
+      "selection": {},
+      "transform": {
+        "translate": {
+          "x": -400,
+          "y": -240
+        },
+        "scale": 1
+      },
+      "timeline": {
+        "isEditorActive": false,
+        "position": 0,
+        "secondToPx": 200,
+        "scrollLeft": 0
+      }
+    },
+    "[vicmon.eez-project]:/actions/1[flow-state]": {
+      "selection": {},
+      "transform": {
+        "translate": {
+          "x": -0.91424560546875,
           "y": 0
         },
         "scale": 1
@@ -1074,12 +1178,16 @@
   "lvglPart": "MAIN",
   "lvglState": "DEFAULT",
   "lvglExpandedPropertiesGroup": [
-    "MARGIN",
-    "MISCELLANEOUS",
-    "BORDER",
-    "BACKGROUND",
     "IMAGE",
-    "PADDING"
+    "LAYOUT",
+    "TEXT",
+    "BORDER",
+    "SHADOW",
+    "MISCELLANEOUS",
+    "POSITION AND SIZE",
+    "MARGIN",
+    "PADDING",
+    "BACKGROUND"
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,

@@ -3,7 +3,8 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Vicmon Configuration</title>
+        <title>Vicmon</title>
+        <!--<link rel="stylesheet" href="pure-min.css" />-->
         <style type="text/css">
             body {
                 max-width: 50em;
@@ -12,44 +13,151 @@
                 font: 1em/1.65 sans-serif;
             }
             input {
-                width: 100%;
-                height: 3em;
-                margin-bottom: 1em;
+                font: 0.9em/1.45 mono;
+                padding: 0.5em 0.6em;
+                display: inline-block;
+                border: 1px solid #ccc;
+                box-shadow: inset 0 1px 3px #ddd;
+                border-radius: 4px;
+                vertical-align: middle;
+                box-sizing: border-box;
+                margin: 0.25em 0 0.25em 0.25em;
+            }
+            label {
+                color: #555;
+                margin: 0.25em;
+            }
+            .mac {
+                width: 9em;
+            }
+            .key {
+                width: 22em;
+                margin-left: 0;
+            }
+            .size {
+                width: 4em;
             }
         </style>
     </head>
     <body>
+        <h1>Vicmon</h1>
+
         <form
             id="config-form"
             action="/post"
             method="post"
             accept-charset="utf-8"
         >
-            <label for="mppt-mac">MPPT MAC:</label>
-            <input type="text" id="mppt-mac" name="mppt_mac" /><br />
-            <label for="mppt-key">MPPT Key:</label>
-            <input type="text" id="mppt-key" name="mppt_key" /><br />
-            <label for="bmv-mac">BMV MAC:</label>
-            <input type="text" id="bmv-mac" name="bmv_mac" /><br />
-            <label for="bmv-key">BMV Key:</label>
-            <input type="text" id="bmv-key" name="bmv_key" /><br />
-            <label for="inv-mac">Inverter MAC:</label>
-            <input type="text" id="inv-mac" name="inv_mac" /><br />
-            <label for="inv-key">Inverter Key:</label>
-            <input type="text" id="inv-key" name="inv_key" /><br />
-            <label for="pin">Inverter PIN (6 digits)</label>
-            <input
-                type="text"
-                id="inv-pin"
-                name="inv_pin"
-                inputmode="numeric"
-                pattern="[0-9]+"
-                maxlength="6"
-                oninput="validity.valid"
-            /><br />
-
-            <input type="submit" value="Submit" />
+            <fieldset>
+                <legend>Inverter</legend>
+                <label for="inv-mac">MAC</label>
+                <input
+                    class="mac"
+                    type="text"
+                    id="inv-mac"
+                    name="inv_mac"
+                    placeholder="mac"
+                    maxlength="12"
+                    required=""
+                /><br />
+                <label for="inv-key">Key</label><br />
+                <input
+                    class="key"
+                    type="text"
+                    id="inv-key"
+                    name="inv_key"
+                    placeholder="key"
+                    maxlength="32"
+                    required=""
+                /><br />
+                <!--<label for="inv-size">Size (w)</label>
+                <input
+                    class="size"
+                    type="text"
+                    id="inv-size"
+                    name="inv_size"
+                    inputmode="numeric"
+                    placeholder="size"
+                    maxlength="4"
+                    required=""
+                /><br />-->
+                <label for="pin">PIN (6 digits)</label>
+                <input
+                    style="width: 5em"
+                    type="text"
+                    id="inv-pin"
+                    name="inv_pin"
+                    inputmode="numeric"
+                    pattern="[0-9]+"
+                    maxlength="6"
+                    oninput="validity.valid"
+                    placeholder="pin"
+                /><br />
+            </fieldset>
+            <br />
+            <fieldset>
+                <legend>Solar MPPT</legend>
+                <label for="mppt-mac">MAC</label>
+                <input
+                    class="mac"
+                    type="text"
+                    id="mppt-mac"
+                    name="mppt_mac"
+                    placeholder="mac"
+                    maxlength="12"
+                    required=""
+                /><br />
+                <label for="mppt-key">Key</label><br />
+                <input
+                    class="key"
+                    type="text"
+                    id="mppt-key"
+                    name="mppt_key"
+                    placeholder="key"
+                    maxlength="32"
+                    required=""
+                /><br />
+                <!--<label for="inv-size">Size (w)</label>
+                <input
+                    class="size"
+                    type="text"
+                    id="mppt-size"
+                    name="mppt_size"
+                    inputmode="numeric"
+                    placeholder="size"
+                    maxlength="4"
+                    required=""
+                />-->
+            </fieldset>
+            <br />
+            <fieldset>
+                <legend>BMV</legend>
+                <label for="bmv-mac">MAC</label>
+                <input
+                    class="mac"
+                    type="text"
+                    id="bmv-mac"
+                    name="bmv_mac"
+                    maxlength="12"
+                    placeholder="mac"
+                    maxlength="12"
+                    required=""
+                /><br />
+                <label for="bmv-key">Key</label><br />
+                <input
+                    class="key"
+                    type="text"
+                    id="bmv-key"
+                    name="bmv_key"
+                    placeholder="key"
+                    maxlength="32"
+                    required=""
+                />
+            </fieldset>
+            <br />
+            <input type="submit" value="Save" />
         </form>
+
         <p id="server-resp"></p>
         <script type="text/javascript">
             let theForm = document.getElementById("config-form");
@@ -81,6 +189,26 @@
                     console.error(err);
                 }
             });
+        </script>
+        <script type="text/javascript">
+            let cur_values = {${values}}
+            // let cur_values = {
+            //     invmac: "invmac",
+            //     invkey: "invkey",
+            //     invpin: "invpin",
+            //     mpptmac: "mpptmac",
+            //     mpptkey: "mmptkey",
+            //     // bmvmac: "bmvmac",
+            //     // bmvkey: "bmvkey",
+            // };
+
+            document.getElementById("inv-mac").value = cur_values.invmac;
+            document.getElementById("inv-key").value = cur_values.invkey;
+            document.getElementById("inv-pin").value = cur_values.invpin;
+            document.getElementById("mppt-mac").value = cur_values.mpptmac;
+            document.getElementById("mppt-key").value = cur_values.mpptkey;
+            document.getElementById("bmv-mac").value = cur_values.bmvmac;
+            document.getElementById("bmv-key").value = cur_values.bmvkey;
         </script>
     </body>
 </html>

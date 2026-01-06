@@ -1,12 +1,9 @@
 dependencies:
-    # idf:
-    #     version: ">=5.4.2"
-
     lvgl/lvgl:
         version: "=8.4.0"
         public: true
 
-    esp_lcd_touch_gt911: "^1"
+    esp_lcd_touch_gt911: "1.2.0"
 
 description: Waveshare lcd driver
 url: https://github.com/ferdy-lw

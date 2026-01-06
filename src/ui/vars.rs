@@ -1,8 +1,8 @@
-use std::sync::LazyLock;
+use std::{ffi::CStr, sync::LazyLock};
 
 use super::*;
 
-static EMPTY_STR: LazyLock<CString> = LazyLock::new(|| CString::new("").unwrap());
+const EMPTY_STR: &CStr = c"";
 type Cstring = *const ::core::ffi::c_char;
 
 //----------
@@ -24,7 +24,8 @@ pub extern "C" fn get_var_inv_mode() -> Cstring {
         .read()
         .unwrap()
         .as_ref()
-        .unwrap_or(&EMPTY_STR)
+        .map(|s| s.as_c_str())
+        .unwrap_or(EMPTY_STR)
         .as_ptr()
 }
 
@@ -39,7 +40,8 @@ pub extern "C" fn get_var_inv_error() -> Cstring {
         .read()
         .unwrap()
         .as_ref()
-        .unwrap_or(&EMPTY_STR)
+        .map(|s| s.as_c_str())
+        .unwrap_or(EMPTY_STR)
         .as_ptr()
 }
 
@@ -107,7 +109,8 @@ pub extern "C" fn get_var_batt_alarm() -> Cstring {
         .read()
         .unwrap()
         .as_ref()
-        .unwrap_or(&EMPTY_STR)
+        .map(|s| s.as_c_str())
+        .unwrap_or(EMPTY_STR)
         .as_ptr()
 }
 
@@ -145,7 +148,8 @@ pub extern "C" fn get_var_solar_mode() -> Cstring {
         .read()
         .unwrap()
         .as_ref()
-        .unwrap_or(&EMPTY_STR)
+        .map(|s| s.as_c_str())
+        .unwrap_or(EMPTY_STR)
         .as_ptr()
 }
 
@@ -160,7 +164,8 @@ pub extern "C" fn get_var_solar_error() -> Cstring {
         .read()
         .unwrap()
         .as_ref()
-        .unwrap_or(&EMPTY_STR)
+        .map(|s| s.as_c_str())
+        .unwrap_or(EMPTY_STR)
         .as_ptr()
 }
 
@@ -178,7 +183,8 @@ pub extern "C" fn get_var_ip_addr() -> Cstring {
         .read()
         .unwrap()
         .as_ref()
-        .unwrap_or(&EMPTY_STR)
+        .map(|s| s.as_c_str())
+        .unwrap_or(EMPTY_STR)
         .as_ptr()
 }
 
@@ -196,4 +202,88 @@ pub extern "C" fn get_var_backlight_delay() -> i32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn set_var_backlight_delay(value: i32) {
     *BACKLIGHT_DELAY.write().unwrap() = value
+}
+
+pub(super) static CONFIG_INV: LazyLock<RwLock<(CString, CString, CString)>> = LazyLock::new(|| {
+    RwLock::new((
+        EMPTY_STR.to_owned(),
+        EMPTY_STR.to_owned(),
+        EMPTY_STR.to_owned(),
+    ))
+});
+
+pub(super) static CONFIG_MPPT: LazyLock<RwLock<(CString, CString)>> =
+    LazyLock::new(|| RwLock::new((EMPTY_STR.to_owned(), EMPTY_STR.to_owned())));
+
+pub(super) static CONFIG_BMV: LazyLock<RwLock<(CString, CString)>> =
+    LazyLock::new(|| RwLock::new((EMPTY_STR.to_owned(), EMPTY_STR.to_owned())));
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_inv_mac() -> Cstring {
+    CONFIG_INV.read().unwrap().0.as_c_str().as_ptr()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_inv_mac(_value: Cstring) {
+    // NOOP
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_inv_key() -> Cstring {
+    CONFIG_INV.read().unwrap().1.as_c_str().as_ptr()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_inv_key(_value: Cstring) {
+    // NOOP
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_inv_pin() -> Cstring {
+    CONFIG_INV.read().unwrap().2.as_c_str().as_ptr()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_inv_pin(_value: Cstring) {
+    // NOOP
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_mppt_mac() -> Cstring {
+    CONFIG_MPPT.read().unwrap().0.as_c_str().as_ptr()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_mppt_mac(_value: Cstring) {
+    // NOOP
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_mppt_key() -> Cstring {
+    CONFIG_MPPT.read().unwrap().1.as_c_str().as_ptr()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_mppt_key(_value: Cstring) {
+    // NOOP
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_bmv_mac() -> Cstring {
+    CONFIG_BMV.read().unwrap().0.as_c_str().as_ptr()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_bmv_mac(_value: Cstring) {
+    // NOOP
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_bmv_key() -> Cstring {
+    CONFIG_BMV.read().unwrap().1.as_c_str().as_ptr()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_bmv_key(_value: Cstring) {
+    // NOOP
 }

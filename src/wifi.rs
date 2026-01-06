@@ -1,11 +1,13 @@
 use std::{
     ffi::CString,
+    ptr,
     sync::{Arc, Mutex},
 };
 
 use anyhow::Result;
 use esp_idf_svc::{
-    sys::EspError,
+    mdns::EspMdns,
+    sys::{EspError, uxTaskGetStackHighWaterMark},
     wifi::{AccessPointConfiguration, AuthMethod, BlockingWifi, Configuration, EspWifi},
 };
 use log::info;
@@ -13,10 +15,12 @@ use log::info;
 use crate::ui;
 
 const SSID: &str = "VICMON";
+const HOSTNAME: &str = "vicmon";
 
 #[derive(Clone)]
 pub struct Wifi<'d> {
     wifi: Arc<Mutex<BlockingWifi<EspWifi<'d>>>>,
+    mdns: Arc<Mutex<Option<EspMdns>>>,
 }
 
 impl<'d> Wifi<'d> {
@@ -35,6 +39,7 @@ impl<'d> Wifi<'d> {
 
         Ok(Self {
             wifi: Arc::new(Mutex::new(wifi)),
+            mdns: Arc::new(Mutex::new(None)),
         })
     }
 
@@ -47,20 +52,31 @@ impl<'d> Wifi<'d> {
         wifi.wait_netif_up()?;
         info!("Wifi netif up");
 
+        let mut mdns = EspMdns::take()?;
+        mdns.set_hostname(HOSTNAME)?;
+
+        self.mdns.lock().unwrap().replace(mdns);
+
         let ip_addr = wifi.wifi().ap_netif().get_ip_info()?.ip;
-        info!("IP {ip_addr}");
+        info!("IP {HOSTNAME}.local ({ip_addr})");
 
         ui::IP_ADDR
             .write()
             .unwrap()
-            .replace(CString::new(format!("{ip_addr}")).unwrap());
+            .replace(CString::new(format!(" {HOSTNAME}.local ({ip_addr})")).unwrap());
+
+        let stackhigh = unsafe { uxTaskGetStackHighWaterMark(ptr::null_mut()) };
+        info!("Least stack free: {stackhigh}");
 
         Ok(())
     }
 
     pub fn stop_wifi(&mut self) -> Result<()> {
-        let mut wifi = self.wifi.lock().unwrap();
+        if let Some(mdns) = self.mdns.lock().unwrap().take() {
+            drop(mdns);
+        }
 
+        let mut wifi = self.wifi.lock().unwrap();
         wifi.stop()?;
 
         info!("Wifi stopped");

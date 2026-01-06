@@ -50,6 +50,20 @@ extern const char *get_var_ip_addr();
 extern void set_var_ip_addr(const char *value);
 extern int32_t get_var_backlight_delay();
 extern void set_var_backlight_delay(int32_t value);
+extern const char *get_var_inv_mac();
+extern void set_var_inv_mac(const char *value);
+extern const char *get_var_inv_key();
+extern void set_var_inv_key(const char *value);
+extern const char *get_var_inv_pin();
+extern void set_var_inv_pin(const char *value);
+extern const char *get_var_mppt_mac();
+extern void set_var_mppt_mac(const char *value);
+extern const char *get_var_mppt_key();
+extern void set_var_mppt_key(const char *value);
+extern const char *get_var_bmv_mac();
+extern void set_var_bmv_mac(const char *value);
+extern const char *get_var_bmv_key();
+extern void set_var_bmv_key(const char *value);
 
 
 #ifdef __cplusplus
