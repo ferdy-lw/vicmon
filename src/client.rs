@@ -446,6 +446,7 @@ impl Client {
                     .search_service(gattc_if, conn_id, Some(&SERVICE_UUID))?;
                 info!("search for {:?}", Some(SERVICE_UUID));
 
+                /* Use search service--^ events instead...
                 let mut results = [ServiceElement::new(); 5];
                 let size = self.gattc.get_service(
                     gattc_if,
@@ -460,6 +461,7 @@ impl Client {
                 for service in results[..size].iter() {
                     info!("{:?}", service);
                 }
+                */
             }
             GattcEvent::Mtu { status, mtu, .. } => {
                 info!("MTU exchange, status {status:?}, MTU {mtu}");
