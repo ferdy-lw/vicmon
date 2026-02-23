@@ -1,6 +1,6 @@
 {
   "navigation": {
-    "selectedUserPageObject": "[vicmon.eez-project]:/userPages/1",
+    "selectedUserPageObject": "[vicmon.eez-project]:/userPages/2",
     "selectedActionObject": "[vicmon.eez-project]:/actions/0",
     "selectedGlobalVariableObject": "[vicmon.eez-project]:/variables/globalVariables/17",
     "selectedStyleObject": "[vicmon.eez-project]:/lvglStyles/styles/4",
@@ -196,8 +196,7 @@
                       "enableClose": false,
                       "icon": "svg:variable"
                     }
-                  ],
-                  "active": true
+                  ]
                 }
               ]
             },
@@ -205,10 +204,20 @@
               "type": "tabset",
               "id": "EDITORS",
               "weight": 65.26096822995461,
-              "selected": 6,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
               "children": [
+                {
+                  "type": "tab",
+                  "id": "#97e64d49-2678-419f-a6ad-5d7afe344fb4",
+                  "name": "History",
+                  "component": "editor",
+                  "config": {
+                    "objectPath": "[vicmon.eez-project]:/userPages/2",
+                    "permanent": false
+                  },
+                  "icon": "svg:page"
+                },
                 {
                   "type": "tab",
                   "id": "#9ebfb1bd-0021-40af-897c-340a17eeb8e1",
@@ -216,50 +225,6 @@
                   "component": "editor",
                   "config": {
                     "objectPath": "[vicmon.eez-project]:/fonts/1",
-                    "permanent": true
-                  },
-                  "icon": "material:font_download"
-                },
-                {
-                  "type": "tab",
-                  "id": "#c14d4f4d-c3b3-4d08-a6f7-f69c7939512b",
-                  "name": "roboto_med_18",
-                  "component": "editor",
-                  "config": {
-                    "objectPath": "[vicmon.eez-project]:/fonts/3",
-                    "permanent": true
-                  },
-                  "icon": "material:font_download"
-                },
-                {
-                  "type": "tab",
-                  "id": "#4a82af82-72cd-43c3-a8f4-75887b11a4f7",
-                  "name": "roboto_med_22",
-                  "component": "editor",
-                  "config": {
-                    "objectPath": "[vicmon.eez-project]:/fonts/4",
-                    "permanent": true
-                  },
-                  "icon": "material:font_download"
-                },
-                {
-                  "type": "tab",
-                  "id": "#84aefda3-441f-45f2-a02a-5e6109e8aa2b",
-                  "name": "solar_highlight",
-                  "component": "editor",
-                  "config": {
-                    "objectPath": "[vicmon.eez-project]:/actions/0",
-                    "permanent": false
-                  },
-                  "icon": "material:code"
-                },
-                {
-                  "type": "tab",
-                  "id": "#7a9acb36-d428-4d29-b138-570190c2d979",
-                  "name": "roboto_reg_14",
-                  "component": "editor",
-                  "config": {
-                    "objectPath": "[vicmon.eez-project]:/fonts/0",
                     "permanent": true
                   },
                   "icon": "material:font_download"
@@ -286,7 +251,8 @@
                   },
                   "icon": "svg:page"
                 }
-              ]
+              ],
+              "active": true
             },
             {
               "type": "tabset",
@@ -1160,6 +1126,24 @@
           "y": 0
         },
         "scale": 1
+      }
+    },
+    "[vicmon.eez-project]:/userPages/2[flow-state]": {
+      "selection": {
+        "0": {}
+      },
+      "transform": {
+        "translate": {
+          "x": -400,
+          "y": -240
+        },
+        "scale": 1
+      },
+      "timeline": {
+        "isEditorActive": false,
+        "position": 0,
+        "secondToPx": 200,
+        "scrollLeft": 0
       }
     }
   },
