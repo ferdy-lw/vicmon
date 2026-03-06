@@ -7,9 +7,9 @@ use std::time::{Duration, Instant};
 
 use esp_idf_svc::bt::ble::gatt::client::{
     CharacteristicElement, ConnectionId, EspGattc, GattAuthReq, GattCreateConnParams,
-    GattWriteType, GattcEvent, ServiceElement, ServiceSource,
+    GattWriteType, GattcEvent, ServiceSource,
 };
-use esp_idf_svc::bt::ble::gatt::{GattInterface, GattStatus, Handle};
+use esp_idf_svc::bt::ble::gatt::{self, GattInterface, GattStatus, Handle};
 use esp_idf_svc::sys::*;
 
 use anyhow::Result;
@@ -26,21 +26,36 @@ use victron_ble::{DeviceState, ErrorState, Mode};
 use crate::devices::*;
 use crate::ui::{self, ON_DURATION};
 
+mod inverter;
+mod mppt;
+
+use inverter::Inverter;
+use mppt::Mppt;
+
 type VicBtDriver = BtDriver<'static, Ble>;
 type VicEspBleGap = Arc<EspBleGap<'static, Ble, Arc<VicBtDriver>>>;
 type VicEspGattc = Arc<EspGattc<'static, Ble, Arc<VicBtDriver>>>;
 
-const APP_ID: u16 = 0;
+const APP_ID_INV: u16 = 0;
+const APP_ID_MPPT: u16 = 1;
 
 const VICTRON: [u8; 2] = [0xE1, 0x02];
 
-// inverter service UUID
+// victron service UUID
 const SERVICE_UUID: BtUuid = BtUuid::uuid128(0x306b0001b081403783dce59fcc3cdfd0);
-// Write control characteristic UUID
-const INV_CTRL_CHARACTERISITIC_UUID: BtUuid = BtUuid::uuid128(0x306b0003b081403783dce59fcc3cdfd0);
+// flow control characteristic UUID
+const FLOW_CTL_CHARACTERISITIC_UUID: BtUuid = BtUuid::uuid128(0x306b0002b081403783dce59fcc3cdfd0);
+// request complete characteristic UUID
+const REQUEST_CHARACTERISITIC_UUID: BtUuid = BtUuid::uuid128(0x306b0003b081403783dce59fcc3cdfd0);
+// long request complete characteristic UUID
+const LONG_REQUEST_CHARACTERISITIC_UUID: BtUuid =
+    BtUuid::uuid128(0x306b0004b081403783dce59fcc3cdfd0);
 
-const TURN_ON_INVERTER: [u8; 8] = [0x06, 0x03, 0x82, 0x19, 0x02, 0x00, 0x41, 0x03];
-const TURN_OFF_INVERTER: [u8; 8] = [0x06, 0x03, 0x82, 0x19, 0x02, 0x00, 0x41, 0x04];
+// Client Characteristic Configuration UUID
+pub const CLIENT_CONFIGURATION_DESCRIPTOR_UUID: BtUuid = BtUuid::uuid16(0x2902);
+
+// const TURN_ON_INVERTER: [u8; 8] = [0x06, 0x03, 0x82, 0x19, 0x02, 0x00, 0x41, 0x03];
+// const TURN_OFF_INVERTER: [u8; 8] = [0x06, 0x03, 0x82, 0x19, 0x02, 0x00, 0x41, 0x04];
 
 static DEBOUNCE_INV_SWITCH: RwLock<Option<Instant>> = RwLock::new(None);
 
@@ -53,11 +68,15 @@ struct ScanData {
 #[derive(Default)]
 struct State {
     scanning: bool,
-    gattc_if: Option<GattInterface>,
+    gattc_if_inv: Option<GattInterface>,
+    gattc_if_mppt: Option<GattInterface>,
     conn_id: Option<ConnectionId>,
     remote_addr: Option<BdAddr>,
     connect: bool,
     service_start_end_handle: Option<(Handle, Handle)>,
+    flow_char_handle: Option<Handle>,
+    request_char_handle: Option<Handle>,
+    long_request_char_handle: Option<Handle>,
 }
 
 #[derive(Clone)]
@@ -66,6 +85,8 @@ pub struct Client {
     pub gattc: VicEspGattc,
     state: Arc<Mutex<State>>,
     tx: SyncSender<ScanData>,
+    inverter: Inverter,
+    mppt: Mppt,
 }
 
 impl Client {
@@ -80,8 +101,9 @@ impl Client {
 
         let security_conf = SecurityConfiguration {
             auth_req_mode: gap::AuthenticationRequest::MitmBonding,
+            // auth_req_mode: gap::AuthenticationRequest::Mitm,
             io_capabilities: gap::IOCapabilities::KeyboardOnly,
-            static_passkey: Some(123456),
+            // static_passkey: Some(123456),
             ..Default::default()
         };
 
@@ -90,11 +112,15 @@ impl Client {
 
         info!("BLE Gap security configuration");
 
+        let _ = gatt::set_local_mtu(517);
+
         Self {
             gap,
             gattc,
             state: Arc::new(Mutex::new(Default::default())),
             tx,
+            inverter: Inverter {},
+            mppt: Mppt::new(),
         }
     }
 
@@ -115,21 +141,23 @@ impl Client {
     }
 
     pub fn start(&self) -> Result<(), EspError> {
-        self.gattc.register_app(APP_ID)
+        self.gattc.register_app(APP_ID_MPPT)?;
+        self.gattc.register_app(APP_ID_INV)
     }
 
     /// The main event handler for the GAP events
     fn on_gap_event(&self, event: BleGapEvent) -> Result<(), EspError> {
-        // info!("Got gap event: {:?}", mem::discriminant(&event));
+        // Don't log all gap events, there are too many scan result events
 
         match event {
             BleGapEvent::PasskeyRequest => {
+                info!("gap passkey request");
                 let state = self.state.lock().unwrap();
                 if let Some(addr) = state.remote_addr
                     && let Some(passkey) = DEVICES.read().unwrap().get_pin(addr)
                 {
                     esp!(unsafe {
-                        esp_ble_passkey_reply(&addr.raw() as *const _ as *mut _, true, passkey)
+                        esp_ble_passkey_reply(addr.raw() as *const _ as *mut _, true, passkey)
                     })?;
                 }
             }
@@ -151,69 +179,88 @@ impl Client {
                 info!("Stopped ble scanning...");
                 self.state.lock().unwrap().scanning = false;
             }
-            BleGapEvent::ScanResult(search_evt) => match search_evt {
-                GapSearchEvent::InquiryResult(GapSearchResult {
-                    bda,
-                    ble_adv,
-                    adv_data_len,
-                    scan_rsp_len,
-                    ble_addr_type,
-                    ..
-                }) => {
-                    // If the inverter switch has been changed and we scanned the inverter
-                    // then connect to it
-                    if ui::INVERTER_PREV.load(std::sync::atomic::Ordering::Relaxed)
-                        != ui::INVERTER_ON.load(std::sync::atomic::Ordering::Relaxed)
-                        && *DEVICES.read().unwrap().device_addr(DeviceType::Inverter) == bda
-                    {
-                        info!("Inverter found, changing state");
+            BleGapEvent::ScanResult(search_evt) => {
+                match search_evt {
+                    GapSearchEvent::InquiryResult(GapSearchResult {
+                        bda,
+                        ble_adv,
+                        adv_data_len,
+                        scan_rsp_len,
+                        ble_addr_type,
+                        ..
+                    }) => {
+                        // If the inverter switch has been changed
+                        // or we are on the history page but history is empty
+                        // and we've scanned the device, then connect to it
+                        if (ui::INVERTER_PREV.load(std::sync::atomic::Ordering::Relaxed)
+                            != ui::INVERTER_ON.load(std::sync::atomic::Ordering::Relaxed)
+                            && *DEVICES.read().unwrap().device_addr(DeviceType::Inverter) == bda)
+                            || (matches!(*ui::PANEL.read().unwrap(), ui::Panel::History)
+                                && self.mppt.history.lock().unwrap().len() == 0
+                                && *DEVICES.read().unwrap().device_addr(DeviceType::Mppt) == bda)
+                        {
+                            info!("Trigger connecting to remote {bda}");
 
-                        let mut state = self.state.lock().unwrap();
+                            let mut state = self.state.lock().unwrap();
 
-                        if !state.connect {
-                            state.connect = true;
-                            info!("Connect to remote {bda}");
-                            self.gap.stop_scanning()?;
+                            if !state.connect {
+                                state.connect = true;
 
-                            let conn_params = GattCreateConnParams::new(bda, ble_addr_type);
+                                self.gap.stop_scanning()?;
 
-                            self.gattc.enh_open(state.gattc_if.unwrap(), &conn_params)?;
+                                let conn_params = GattCreateConnParams::new(bda, ble_addr_type);
+
+                                let gattc_if =
+                                    if *DEVICES.read().unwrap().device_addr(DeviceType::Inverter)
+                                        == bda
+                                    {
+                                        info!("Connecting to Inverter {bda}");
+                                        state.gattc_if_inv.unwrap_or(0)
+                                    } else {
+                                        info!("Connecting to MPPT {bda}");
+                                        state.gattc_if_mppt.unwrap_or(0)
+                                    };
+
+                                self.gattc.enh_open(gattc_if, &conn_params)?;
+                            }
+                        } else {
+                            let _ = self.tx.send(ScanData {
+                                bda: bda.into(),
+                                ble_adv: ble_adv.map(|d| d.to_owned()),
+                                data_len: adv_data_len as usize + scan_rsp_len as usize,
+                            });
                         }
-                    } else {
-                        let _ = self.tx.send(ScanData {
-                            bda: bda.into(),
-                            ble_adv: ble_adv.map(|d| d.to_owned()),
-                            data_len: adv_data_len as usize + scan_rsp_len as usize,
-                        });
+                    }
+                    GapSearchEvent::InquiryComplete(num) => {
+                        info!("Scan timeout, completed. Found {num}");
+                        self.state.lock().unwrap().scanning = false;
+
+                        if ON_DURATION.recent_touch() {
+                            if self.start_scanning()? {
+                                info!("Recently touched, start scan after timeout on");
+                            }
+                        }
+                    }
+                    _ => {
+                        info!("Got unsupported scan search {search_evt:?}")
                     }
                 }
-                GapSearchEvent::InquiryComplete(num) => {
-                    info!("Scan timeout, completed. Found {num}");
-                    self.state.lock().unwrap().scanning = false;
-
-                    if ON_DURATION.recent_touch() {
-                        if self.start_scanning()? {
-                            info!("Recently touched, start scan after timeout on");
-                        }
-                    }
-                }
-                _ => {
-                    info!("Got unsupported scan search {search_evt:?}")
-                }
-            },
+            }
 
             BleGapEvent::Other {
                 raw_event,
                 raw_data,
             } => {
-                info!("Raw event: {:?}, data: {:?}", raw_event, raw_data);
+                info!("gap raw event: {:?}, data: {:?}", raw_event, raw_data);
                 if raw_event == esp_gap_ble_cb_event_t_ESP_GAP_BLE_PERIODIC_ADV_REPORT_EVT {
                     unsafe {
                         info!("Periodic adv: {:?}", raw_data.0.period_adv_report.params);
                     }
                 }
             }
-            _ => {}
+            _ => {
+                info!("gap unused event: {event:?}");
+            }
         }
 
         Ok(())
@@ -403,9 +450,10 @@ impl Client {
 
         match event {
             GattcEvent::ClientRegistered { status, app_id } => {
+                info!("Registered if {gattc_if} app id {app_id}");
                 self.check_gatt_status(status)?;
-                if APP_ID == app_id {
-                    self.state.lock().unwrap().gattc_if = Some(gattc_if);
+                if APP_ID_INV == app_id {
+                    self.state.lock().unwrap().gattc_if_inv = Some(gattc_if);
 
                     let scan_params = ScanParams {
                         scan_type: ScanType::Passive,
@@ -418,6 +466,8 @@ impl Client {
 
                     // This will start scanning in the scan param set gap event
                     self.gap.set_scan_params(&scan_params)?;
+                } else if APP_ID_MPPT == app_id {
+                    self.state.lock().unwrap().gattc_if_mppt = Some(gattc_if);
                 }
             }
             GattcEvent::Connected { conn_id, addr, .. } => {
@@ -428,7 +478,7 @@ impl Client {
                 state.conn_id = Some(conn_id);
                 state.remote_addr = Some(addr);
 
-                // self.gattc.mtu_req(gattc_if, conn_id)?;
+                self.gattc.mtu_req(gattc_if, conn_id)?;
             }
             GattcEvent::Open {
                 status, addr, mtu, ..
@@ -445,23 +495,6 @@ impl Client {
                 self.gattc
                     .search_service(gattc_if, conn_id, Some(&SERVICE_UUID))?;
                 info!("search for {:?}", Some(SERVICE_UUID));
-
-                /* Use search service--^ events instead...
-                let mut results = [ServiceElement::new(); 5];
-                let size = self.gattc.get_service(
-                    gattc_if,
-                    conn_id,
-                    // None,
-                    Some(&SERVICE_UUID),
-                    0,
-                    &mut results,
-                )?;
-
-                info!("Get service Found {size}");
-                for service in results[..size].iter() {
-                    info!("{:?}", service);
-                }
-                */
             }
             GattcEvent::Mtu { status, mtu, .. } => {
                 info!("MTU exchange, status {status:?}, MTU {mtu}");
@@ -470,7 +503,7 @@ impl Client {
                 conn_id,
                 start_handle,
                 end_handle,
-                srvc_id,
+                ref srvc_id,
                 is_primary,
             } => {
                 info!(
@@ -487,8 +520,8 @@ impl Client {
             }
             GattcEvent::SearchComplete {
                 status,
-                conn_id,
                 searched_service_source,
+                ..
             } => {
                 self.check_gatt_status(status)?;
 
@@ -504,80 +537,58 @@ impl Client {
                     }
                 };
                 info!("Service search complete");
-
-                let state = self.state.lock().unwrap();
-
-                if let Some((start_handle, end_handle)) = state.service_start_end_handle {
-                    let mut chars = [CharacteristicElement::new(); 1];
-                    match self.gattc.get_characteristic_by_uuid(
-                        gattc_if,
-                        conn_id,
-                        start_handle,
-                        end_handle,
-                        &INV_CTRL_CHARACTERISITIC_UUID,
-                        &mut chars,
-                    ) {
-                        Ok(chars_count) => {
-                            info!("Found inv ctrl len {chars_count}");
-                            if chars_count > 0 {
-                                if let Some(inv_ctrl_char_elem) = chars.first() {
-                                    info!("Inverter ctrl handle {}", inv_ctrl_char_elem.handle());
-
-                                    let command = if ui::INVERTER_ON
-                                        .load(std::sync::atomic::Ordering::Relaxed)
-                                    {
-                                        info!("Going to turn inverter ON");
-                                        &TURN_ON_INVERTER
-                                    } else {
-                                        info!("Going to turn inverter OFF");
-                                        &TURN_OFF_INVERTER
-                                    };
-
-                                    self.gattc.write_characteristic(
-                                        gattc_if,
-                                        conn_id,
-                                        inv_ctrl_char_elem.handle(),
-                                        command,
-                                        GattWriteType::NoResponse,
-                                        GattAuthReq::Mitm,
-                                    )?;
-                                }
-                            } else {
-                                error!("No inv ctrl characteristic found");
-                            }
-                        }
-                        Err(status) => {
-                            error!("get inv ctrl characteristic error {status:?}");
-                        }
-                    };
-                };
             }
 
             GattcEvent::WriteCharacteristic { status, handle, .. } => {
                 self.check_gatt_status(status)?;
 
                 info!("Characteristic write successful handle {handle}");
-                let current = ui::INVERTER_ON.load(std::sync::atomic::Ordering::Relaxed);
-                ui::INVERTER_PREV.store(current, std::sync::atomic::Ordering::Relaxed);
-                info!("Setting prev to current {current}");
-
-                info!("Disconnecting");
-                self.disconnect()?;
             }
+            GattcEvent::WriteDescriptor { status, handle, .. } => {
+                self.check_gatt_status(status)?;
+
+                info!("Descriptor write successful handle {handle}");
+            }
+
             GattcEvent::Disconnected { addr, reason, .. } => {
                 let mut state = self.state.lock().unwrap();
-                state.connect = false;
-                state.remote_addr = None;
-                state.conn_id = None;
-                state.service_start_end_handle = None;
+                if state.remote_addr.is_some() {
+                    state.connect = false;
+                    state.remote_addr = None;
+                    state.conn_id = None;
+                    state.service_start_end_handle = None;
+                    state.flow_char_handle = None;
+                    state.request_char_handle = None;
+                    state.long_request_char_handle = None;
 
-                DEBOUNCE_INV_SWITCH.write().unwrap().replace(Instant::now());
+                    let history = self.mppt.history.lock().unwrap();
+                    if history.len() > 0 {
+                        for hist in history.iter() {
+                            info!("Hist: {hist:?}");
+                        }
+                    }
 
-                info!("Disconnected, remote {addr}, reason {reason:?}");
-                self.gap.start_scanning(ON_DURATION.as_secs() as _)?;
+                    info!("Disconnected, remote {addr}, reason {reason:?}");
+                    self.gap.start_scanning(ON_DURATION.as_secs() as _)?;
+                } else {
+                    info!("Already disconnected, remote {addr}, reason {reason:?}");
+                }
             }
             _ => (),
+        };
+
+        if self
+            .state
+            .lock()
+            .unwrap()
+            .gattc_if_inv
+            .is_some_and(|inv_if| inv_if == gattc_if)
+        {
+            self.inverter.on_gattc_event(self, gattc_if, event)?;
+        } else {
+            self.mppt.on_gattc_event(self, gattc_if, event)?;
         }
+
         Ok(())
     }
 
@@ -585,6 +596,7 @@ impl Client {
         let state = self.state.lock().unwrap();
 
         if let Some(addr) = state.remote_addr {
+            drop(state);
             self.gap.disconnect(addr)
         } else {
             Ok(())
@@ -593,7 +605,9 @@ impl Client {
 
     pub fn start_scanning(&self) -> Result<bool, EspError> {
         let state = self.state.lock().unwrap();
+
         if !state.connect && !state.scanning {
+            drop(state);
             self.gap.start_scanning(ON_DURATION.as_secs() as _)?;
             Ok(true)
         } else {
@@ -603,7 +617,9 @@ impl Client {
 
     pub fn stop_scanning(&self) -> Result<bool> {
         let state = self.state.lock().unwrap();
+
         if state.scanning {
+            drop(state);
             self.gap.stop_scanning()?;
             Ok(true)
         } else {

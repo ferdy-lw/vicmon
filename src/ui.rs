@@ -1,11 +1,17 @@
 use std::{
     ffi::CString,
-    sync::{atomic::AtomicBool, RwLock},
+    sync::{RwLock, atomic::AtomicBool},
 };
 
 use self::ui::OnDuration;
 
 const DEFAULT_DELAY: u64 = 30_u64;
+
+pub enum Panel {
+    Main,
+    History,
+    Config,
+}
 
 pub static ON_DURATION: OnDuration = OnDuration::new();
 
@@ -24,6 +30,8 @@ pub static SOLAR_YIELD: RwLock<i32> = RwLock::new(0i32);
 pub static SOLAR_MODE: RwLock<Option<CString>> = RwLock::new(None);
 pub static SOLAR_ERROR: RwLock<Option<CString>> = RwLock::new(None);
 pub static IP_ADDR: RwLock<Option<CString>> = RwLock::new(None);
+
+pub static PANEL: RwLock<Panel> = RwLock::new(Panel::Main);
 
 pub mod ui;
 pub mod vars;

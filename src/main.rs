@@ -1,4 +1,5 @@
 #![feature(atomic_try_update)]
+#![feature(duration_constructors_lite)]
 
 use std::sync::Arc;
 use std::thread::{self};

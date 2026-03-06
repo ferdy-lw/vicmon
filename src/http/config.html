@@ -117,6 +117,18 @@
                     maxlength="32"
                     required=""
                 /><br />
+                <label for="pin">PIN (6 digits)</label>
+                <input
+                    style="width: 5em"
+                    type="text"
+                    id="mppt-pin"
+                    name="mppt_pin"
+                    inputmode="numeric"
+                    pattern="[0-9]+"
+                    maxlength="6"
+                    oninput="validity.valid"
+                    placeholder="pin"
+                /><br />
                 <!--<label for="inv-size">Size (w)</label>
                 <input
                     class="size"
@@ -174,6 +186,7 @@
                         new FormData(form).entries(),
                     );
                     entries["inv_pin"] = parseInt(entries["inv_pin"]);
+                    entries["mppt_pin"] = parseInt(entries["mppt_pin"]);
 
                     let resp = await fetch(url, {
                         method: "POST",
@@ -192,21 +205,13 @@
         </script>
         <script type="text/javascript">
             let cur_values = {${values}}
-            // let cur_values = {
-            //     invmac: "invmac",
-            //     invkey: "invkey",
-            //     invpin: "invpin",
-            //     mpptmac: "mpptmac",
-            //     mpptkey: "mmptkey",
-            //     // bmvmac: "bmvmac",
-            //     // bmvkey: "bmvkey",
-            // };
 
             document.getElementById("inv-mac").value = cur_values.invmac;
             document.getElementById("inv-key").value = cur_values.invkey;
             document.getElementById("inv-pin").value = cur_values.invpin;
             document.getElementById("mppt-mac").value = cur_values.mpptmac;
             document.getElementById("mppt-key").value = cur_values.mpptkey;
+            document.getElementById("mppt-pin").value = cur_values.mpptpin;
             document.getElementById("bmv-mac").value = cur_values.bmvmac;
             document.getElementById("bmv-key").value = cur_values.bmvkey;
         </script>

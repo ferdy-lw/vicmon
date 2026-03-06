@@ -60,6 +60,8 @@ extern const char *get_var_mppt_mac();
 extern void set_var_mppt_mac(const char *value);
 extern const char *get_var_mppt_key();
 extern void set_var_mppt_key(const char *value);
+extern const char *get_var_mppt_pin();
+extern void set_var_mppt_pin(const char *value);
 extern const char *get_var_bmv_mac();
 extern void set_var_bmv_mac(const char *value);
 extern const char *get_var_bmv_key();

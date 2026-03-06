@@ -212,8 +212,14 @@ pub(super) static CONFIG_INV: LazyLock<RwLock<(CString, CString, CString)>> = La
     ))
 });
 
-pub(super) static CONFIG_MPPT: LazyLock<RwLock<(CString, CString)>> =
-    LazyLock::new(|| RwLock::new((EMPTY_STR.to_owned(), EMPTY_STR.to_owned())));
+pub(super) static CONFIG_MPPT: LazyLock<RwLock<(CString, CString, CString)>> =
+    LazyLock::new(|| {
+        RwLock::new((
+            EMPTY_STR.to_owned(),
+            EMPTY_STR.to_owned(),
+            EMPTY_STR.to_owned(),
+        ))
+    });
 
 pub(super) static CONFIG_BMV: LazyLock<RwLock<(CString, CString)>> =
     LazyLock::new(|| RwLock::new((EMPTY_STR.to_owned(), EMPTY_STR.to_owned())));
@@ -265,6 +271,16 @@ pub extern "C" fn get_var_mppt_key() -> Cstring {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn set_var_mppt_key(_value: Cstring) {
+    // NOOP
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_mppt_pin() -> Cstring {
+    CONFIG_MPPT.read().unwrap().2.as_c_str().as_ptr()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_mppt_pin(_value: Cstring) {
     // NOOP
 }
 

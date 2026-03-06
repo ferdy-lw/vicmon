@@ -120,6 +120,7 @@ pub enum UiObject {
     MainScreen,
     GoMain,
     GoConfig,
+    GoHistory,
 }
 
 #[allow(dead_code)]
@@ -173,6 +174,13 @@ pub unsafe fn subscribe_ui_events(
         );
 
         lv_obj_add_event_cb(
+            objects.go_history,
+            lv_event_cb,
+            lv_event_code_t_LV_EVENT_PRESSED,
+            &(UiObject::GoHistory as u8) as *const _ as *mut _,
+        );
+
+        lv_obj_add_event_cb(
             objects.go_config,
             lv_event_cb,
             lv_event_code_t_LV_EVENT_PRESSED,
@@ -181,6 +189,13 @@ pub unsafe fn subscribe_ui_events(
 
         lv_obj_add_event_cb(
             objects.go_main,
+            lv_event_cb,
+            lv_event_code_t_LV_EVENT_PRESSED,
+            &(UiObject::GoMain as u8) as *const _ as *mut _,
+        );
+
+        lv_obj_add_event_cb(
+            objects.go_main_hist,
             lv_event_cb,
             lv_event_code_t_LV_EVENT_PRESSED,
             &(UiObject::GoMain as u8) as *const _ as *mut _,
@@ -267,6 +282,8 @@ fn on_ui_event(
                             }
                         }
                         UiObject::GoMain => {
+                            *ui::PANEL.write().unwrap() = ui::Panel::Main;
+
                             // Update the duration time
                             ON_DURATION.new_time(get_var_backlight_delay() as _);
 
@@ -278,11 +295,18 @@ fn on_ui_event(
                                 error!("Failed to stop wifi, {e:?}");
                             }
 
+                            // Make sure we're not still connected, this will also start scanning again
+                            if let Err(e) = client.disconnect() {
+                                info!("Error disconnecting on return to main {e}");
+                            }
+
                             if let Ok(true) = client.start_scanning() {
                                 info!("Start scan on return to main screen");
                             }
                         }
                         UiObject::GoConfig => {
+                            *ui::PANEL.write().unwrap() = ui::Panel::Config;
+
                             // Stop turning backlight off
                             LAST_TOUCH.write().unwrap().take();
 
@@ -291,6 +315,14 @@ fn on_ui_event(
                             if let Ok(true) = client.stop_scanning() {
                                 info!("Stop scan in config screen");
                             }
+                        }
+                        UiObject::GoHistory => {
+                            *ui::PANEL.write().unwrap() = ui::Panel::History;
+
+                            // Stop turning backlight off
+                            LAST_TOUCH.write().unwrap().take();
+
+                            turn_backlight_on(true);
                         }
                     },
                 };
@@ -323,6 +355,7 @@ pub fn config_device(device: &Device) {
             let mut config = CONFIG_MPPT.write().unwrap();
             config.0 = CString::new(device.addr().to_string()).unwrap();
             config.1 = CString::new(hex::encode_upper(device.key())).unwrap();
+            config.2 = CString::new(format!("{:06}", device.pin().unwrap_or(0))).unwrap();
         }
         DeviceType::Bmv => {
             let mut config = CONFIG_BMV.write().unwrap();

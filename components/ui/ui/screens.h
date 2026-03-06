@@ -9,9 +9,12 @@ extern "C" {
 
 typedef struct _objects_t {
     lv_obj_t *main;
+    lv_obj_t *history;
     lv_obj_t *config;
     lv_obj_t *obj0;
     lv_obj_t *go_config;
+    lv_obj_t *go_history;
+    lv_obj_t *go_main_hist;
     lv_obj_t *go_main;
     lv_obj_t *wifi_btn;
     lv_obj_t *inverter_container;
@@ -39,6 +42,7 @@ typedef struct _objects_t {
     lv_obj_t *obj9;
     lv_obj_t *obj10;
     lv_obj_t *obj11;
+    lv_obj_t *chart_history;
     lv_obj_t *obj12;
     lv_obj_t *obj13;
     lv_obj_t *obj14;
@@ -50,18 +54,24 @@ typedef struct _objects_t {
     lv_obj_t *obj20;
     lv_obj_t *obj21;
     lv_obj_t *obj22;
+    lv_obj_t *obj23;
 } objects_t;
 
 extern objects_t objects;
 
 enum ScreensEnum {
     SCREEN_ID_MAIN = 1,
-    SCREEN_ID_CONFIG = 2,
+    SCREEN_ID_HISTORY = 2,
+    SCREEN_ID_CONFIG = 3,
 };
 
 void create_screen_main();
 void delete_screen_main();
 void tick_screen_main();
+
+void create_screen_history();
+void delete_screen_history();
+void tick_screen_history();
 
 void create_screen_config();
 void delete_screen_config();

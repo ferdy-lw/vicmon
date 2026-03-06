@@ -1,0 +1,366 @@
+use std::sync::{
+    atomic::{AtomicU8, Ordering},
+    mpsc::{self, Sender},
+};
+
+use esp_idf_svc::{
+    bt::ble::gatt::{
+        GattInterface,
+        client::{DescriptorElement, GattcEvent},
+    },
+    sys::EspError,
+};
+
+use super::*;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct History {
+    pub day: u8,
+    pub power: u32,
+    pub p_max: u32,
+    pub v_max: f32,
+    pub bat_max: f32,
+    pub bat_min: f32,
+    pub float: Duration,
+    pub abs: Duration,
+    pub bulk: Duration,
+    pub errors: u8,
+}
+
+impl History {
+    pub fn from_raw(day: u8, bytes: &[u8]) -> Self {
+        // 0000   |data 08| |source 03 |2byte cmd 19 |id 10 51| |type arr? 58  |num bytes 22
+        // |err? 00 | yield 4c 00 00  00| ff ff ff ff
+        // 0010   |bmx a3 05| |bmn f7 04| 00 00 00 00 00 |blk 4c 01| |abs 05 00| |flt 61 01| |pmx 04
+        // 0020   01 00 00 | ba 00 |vmx 67 12| fc 00
+
+        let errors = bytes[0]; //u8::from_le_bytes(bytes[0].try_into().unwrap()); // maybe error?
+        let power = u32::from_le_bytes(bytes[1..=4].try_into().unwrap()) * 10; // wh (yield is in .01kwh units)
+        // 5..==8 ?
+        let bat_max = u16::from_le_bytes(bytes[9..=10].try_into().unwrap()) as f32 * 0.01; // v (bmx is in .01v units)
+        let bat_min = u16::from_le_bytes(bytes[11..=12].try_into().unwrap()) as f32 * 0.01; // v (bmn is in .01v units)
+        // 13..=17 ?
+        let bulk =
+            Duration::from_mins(u16::from_le_bytes(bytes[18..=19].try_into().unwrap()) as u64);
+        let abs =
+            Duration::from_mins(u16::from_le_bytes(bytes[20..=21].try_into().unwrap()) as u64);
+        let float =
+            Duration::from_mins(u16::from_le_bytes(bytes[22..=23].try_into().unwrap()) as u64);
+        let p_max = u32::from_le_bytes(bytes[24..=27].try_into().unwrap()); // w
+        // 28..=29 ?
+        let v_max = u16::from_le_bytes(bytes[30..=31].try_into().unwrap()) as f32 * 0.01; // v (vmx is in .01v units)
+
+        Self {
+            day,
+            power,
+            p_max,
+            v_max,
+            bat_max,
+            bat_min,
+            float,
+            abs,
+            bulk,
+            errors,
+        }
+    }
+}
+
+static RECEIVED_REQUEST: &[u8] = &[0xf9, 0x01]; // ACK when the mppt has accepted the command request
+static START_CTL_FLOW_1: &[u8] = &[0xfa, 0x80, 0xff];
+static START_CTL_FLOW_2: &[u8] = &[0xf9, 0x80];
+static COMMAND_REQUEST_BEGIN: &[u8] = &[0x01];
+static COMMAND_REQUEST_TYPE_3: &[u8] = &[0x03, 0x03];
+const HISTORY_LIFETIME_COMMAND: u8 = 0x4F; // This is the 'day' part of a history command that indicates lifetime data
+const HISTORY_DAY_0_COMMAND: u8 = 0x50; // Day 0 is 0x50, 1 is 0x51 ...
+const DAYS: usize = 10;
+const HISTORY_REQUEST_PREFIX: [u8; 5] = [0x05, 0x03, 0x81, 0x19, 0x10]; // command starts with this and ends with a 0x50+day_num up to 4f
+const HISTORY_REQUEST_PREFIX_LEN: usize = HISTORY_REQUEST_PREFIX.len();
+const fn history_command() -> [u8; (HISTORY_REQUEST_PREFIX_LEN + 1) * (DAYS + 1)] {
+    let mut command = [0; (HISTORY_REQUEST_PREFIX_LEN + 1) * (DAYS + 1)];
+
+    let mut day = 0;
+    // add a day for the lifetime command
+    while day < DAYS + 1 {
+        let mut idx = 0;
+
+        while idx < HISTORY_REQUEST_PREFIX_LEN {
+            command[HISTORY_REQUEST_PREFIX_LEN * day + idx + day] = HISTORY_REQUEST_PREFIX[idx];
+            idx += 1;
+        }
+
+        command[HISTORY_REQUEST_PREFIX_LEN * day + idx + day] = if day == DAYS {
+            HISTORY_LIFETIME_COMMAND
+        } else {
+            HISTORY_DAY_0_COMMAND + day as u8
+        };
+
+        day += 1;
+    }
+
+    command
+}
+static HISTORY_REQUEST_COMMANDS: &[u8] = &history_command();
+static HISTORY_RESPONSE_PREFIX: &[u8] = &[0x08, 0x03, 0x19, 0x10]; // command response starts with this and ends with a 0x50+day_num up to 4f
+
+#[derive(Clone)]
+pub(super) struct Mppt {
+    command: Arc<AtomicU8>,
+    notify_tx: Arc<Mutex<Option<Sender<(u16, Vec<u8>)>>>>,
+    pub history: Arc<Mutex<Vec<History>>>,
+    long_req_desc_handle: Arc<Mutex<Option<Handle>>>,
+}
+
+impl Mppt {
+    pub(super) fn new() -> Self {
+        Self {
+            command: Arc::new(AtomicU8::new(0)),
+            notify_tx: Arc::new(Mutex::new(None)),
+            history: Arc::new(Mutex::new(Vec::new())),
+            long_req_desc_handle: Arc::new(Mutex::new(None)),
+        }
+    }
+
+    pub(super) fn on_gattc_event(
+        &self,
+        client: &Client,
+        gattc_if: GattInterface,
+        event: GattcEvent,
+    ) -> Result<(), EspError> {
+        match event {
+            GattcEvent::SearchComplete { conn_id, .. } => {
+                let mut state = client.state.lock().unwrap();
+
+                if let Some((start_handle, end_handle)) = state.service_start_end_handle {
+                    let mut chars = [CharacteristicElement::new(); 5];
+                    let chars_count = client
+                        .gattc
+                        .get_all_characteristics(
+                            gattc_if,
+                            conn_id,
+                            start_handle,
+                            end_handle,
+                            0,
+                            &mut chars,
+                        )
+                        .map_err(|s| {
+                            info!("Not all char found {s:?}");
+                            EspError::from_infallible::<ESP_FAIL>()
+                        })?;
+                    info!("Found {chars_count} chars in service");
+
+                    if chars_count > 0 {
+                        // Start the history building thread
+                        let (notify_tx, notify_rx) = mpsc::channel();
+
+                        *self.notify_tx.lock().unwrap() = Some(notify_tx);
+                        Mppt::on_notify(notify_rx, Arc::clone(&self.history));
+
+                        // For all the characteristics, register for notify
+                        for char in chars[..chars_count].iter() {
+                            if char.uuid() == FLOW_CTL_CHARACTERISITIC_UUID {
+                                state.flow_char_handle = Some(char.handle());
+                            } else if char.uuid() == REQUEST_CHARACTERISITIC_UUID {
+                                state.request_char_handle = Some(char.handle());
+                            } else if char.uuid() == LONG_REQUEST_CHARACTERISITIC_UUID {
+                                state.long_request_char_handle = Some(char.handle());
+                            } else {
+                                info!("Unknown characteristic {:?}", char.uuid())
+                            }
+                            client.gattc.register_for_notify(
+                                gattc_if,
+                                state.remote_addr.as_ref().unwrap(),
+                                char.handle(),
+                            )?;
+                        }
+                    }
+                };
+            }
+            GattcEvent::RegisterNotify { status, handle } => {
+                info!("Register Nofify {status:?} char handle {handle}");
+
+                client.check_gatt_status(status)?;
+                let state = client.state.lock().unwrap();
+
+                if let Some(conn_id) = state.conn_id {
+                    let mut descrs = [DescriptorElement::new(); 1];
+
+                    match client.gattc.get_descriptor_by_char_handle(
+                        gattc_if,
+                        conn_id,
+                        handle,
+                        &CLIENT_CONFIGURATION_DESCRIPTOR_UUID,
+                        &mut descrs,
+                    ) {
+                        Ok(descrs_count) => {
+                            if descrs_count > 0 {
+                                if let Some(descr) = descrs.first() {
+                                    client.gattc.write_descriptor(
+                                        gattc_if,
+                                        conn_id,
+                                        descr.handle(),
+                                        &1_u16.to_le_bytes(),
+                                        GattWriteType::RequireResponse,
+                                        GattAuthReq::Mitm,
+                                    )?;
+
+                                    if let Some(long_req_char_handle) =
+                                        state.long_request_char_handle
+                                        && long_req_char_handle == handle
+                                    {
+                                        self.long_req_desc_handle
+                                            .lock()
+                                            .unwrap()
+                                            .replace(descr.handle());
+                                    }
+                                    info!(
+                                        "Write if {gattc_if} cid {conn_id} descriptor {} char {handle} ",
+                                        descr.handle()
+                                    );
+                                }
+                            } else {
+                                error!("No ind descriptor found for char handle {handle}");
+                            }
+                        }
+                        Err(status) => {
+                            error!(
+                                "Get notify char descriptor for char handle {handle} error {status:?}"
+                            );
+                        }
+                    }
+                }
+            }
+            GattcEvent::Notify {
+                addr,
+                handle,
+                value,
+                is_notify,
+                conn_id,
+            } => {
+                info!("Got is_notify {is_notify}, addr {addr}, handle {handle}, value {value:?}");
+
+                let state = client.state.lock().unwrap();
+                if let Some(flow_handle) = state.flow_char_handle {
+                    if handle == flow_handle && value == RECEIVED_REQUEST {
+                        let command_idx = self.command.load(Ordering::Relaxed);
+
+                        let command: Option<&[u8]> = if command_idx == 0 {
+                            Some(COMMAND_REQUEST_BEGIN)
+                        } else if command_idx == 1 {
+                            Some(COMMAND_REQUEST_TYPE_3)
+                        } else if command_idx == 2 {
+                            Some(HISTORY_REQUEST_COMMANDS)
+                        } else {
+                            None
+                        };
+
+                        if let Some(command) = command
+                            && let Some(gattc_if) = state.gattc_if_mppt
+                            && let Some(handle) = state.request_char_handle
+                        {
+                            info!("Writing command: {command:?}");
+
+                            client.gattc.write_characteristic(
+                                gattc_if,
+                                conn_id,
+                                handle,
+                                command,
+                                GattWriteType::NoResponse,
+                                GattAuthReq::Mitm,
+                            )?;
+
+                            self.command.store(command_idx + 1, Ordering::Relaxed);
+                        }
+                    } else {
+                        if value.len() >= 40
+                            && value[4] >= HISTORY_LIFETIME_COMMAND
+                            && value.starts_with(HISTORY_RESPONSE_PREFIX)
+                        {
+                            if value[4] == HISTORY_LIFETIME_COMMAND {
+                                // The other history all comes before this
+                                info!("Got last history command response, closing");
+                                let _ = client.gattc.close(gattc_if, conn_id);
+                            } else if let Some(tx) = self.notify_tx.lock().unwrap().as_ref() {
+                                let _ = tx.send((handle, value.to_vec()));
+                            }
+                        }
+                    }
+                }
+            }
+            GattcEvent::WriteDescriptor {
+                conn_id, handle, ..
+            } => {
+                // On writing of the last descriptor handle send the startup commands
+                if self
+                    .long_req_desc_handle
+                    .lock()
+                    .unwrap()
+                    .is_some_and(|h| handle == h)
+                {
+                    let state = client.state.lock().unwrap();
+
+                    if let Some(handle) = state.flow_char_handle {
+                        client.gattc.write_characteristic(
+                            gattc_if,
+                            conn_id,
+                            handle,
+                            START_CTL_FLOW_1,
+                            GattWriteType::NoResponse,
+                            GattAuthReq::Mitm,
+                        )?;
+                        client.gattc.write_characteristic(
+                            gattc_if,
+                            conn_id,
+                            handle,
+                            START_CTL_FLOW_2,
+                            GattWriteType::NoResponse,
+                            GattAuthReq::Mitm,
+                        )?;
+
+                        info!("Wrote start seq");
+                    }
+                }
+            }
+            GattcEvent::Disconnected { .. } => {
+                if let Some(tx) = self.notify_tx.lock().unwrap().take() {
+                    drop(tx);
+                }
+                self.command.store(0, Ordering::Relaxed);
+            }
+            _ => (),
+        };
+
+        Ok(())
+    }
+
+    fn on_notify(notify_rx: Receiver<(u16, Vec<u8>)>, history: Arc<Mutex<Vec<History>>>) {
+        let _ = thread::Builder::new()
+            .name("hist_bldr".to_string())
+            .stack_size(3000)
+            .spawn(move || {
+                info!("Start history builder thread");
+                loop {
+                    match notify_rx.recv() {
+                        Ok((_handle, value)) => {
+                            // info!("On notify handle {handle}, value {value:?}");
+
+                            // if value.len() >= 40 {
+                            //     let value = value.as_slice();
+
+                            //     if value.starts_with(&HISTORY_COMMAND_PREFIX) && value[4] >= 0x50 {
+                            let day = value[4] - 0x50;
+
+                            let history_value = History::from_raw(day, &value[7..]);
+
+                            history.lock().as_mut().unwrap().push(history_value);
+                            // }
+                            // }
+                        }
+                        Err(e) => {
+                            info!("Stop history builder thread {e:?}");
+                            break;
+                        }
+                    }
+                }
+            });
+    }
+}

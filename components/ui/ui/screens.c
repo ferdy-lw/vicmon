@@ -64,7 +64,7 @@ static void event_handler_cb_main_pv_power(lv_event_t *e) {
         lv_obj_t *ta = lv_event_get_target(e);
         if (tick_value_change_obj != ta) {
             int32_t value = lv_arc_get_value(ta);
-            assignIntegerProperty(flowState, 35, 3, value, "Failed to assign Value in Arc widget");
+            assignIntegerProperty(flowState, 34, 3, value, "Failed to assign Value in Arc widget");
         }
     }
 }
@@ -91,6 +91,28 @@ static void event_handler_cb_main_go_config(lv_event_t *e) {
     if (event == LV_EVENT_CLICKED) {
         e->user_data = (void *)0;
         flowPropagateValueLVGLEvent(flowState, 48, 0, e);
+    }
+}
+
+static void event_handler_cb_main_go_history(lv_event_t *e) {
+    lv_event_code_t event = lv_event_get_code(e);
+    void *flowState = lv_event_get_user_data(e);
+    (void)flowState;
+    
+    if (event == LV_EVENT_CLICKED) {
+        e->user_data = (void *)0;
+        flowPropagateValueLVGLEvent(flowState, 49, 0, e);
+    }
+}
+
+static void event_handler_cb_history_go_main_hist(lv_event_t *e) {
+    lv_event_code_t event = lv_event_get_code(e);
+    void *flowState = lv_event_get_user_data(e);
+    (void)flowState;
+    
+    if (event == LV_EVENT_CLICKED) {
+        e->user_data = (void *)0;
+        flowPropagateValueLVGLEvent(flowState, 0, 0, e);
     }
 }
 
@@ -740,6 +762,22 @@ void create_screen_main() {
             lv_obj_set_style_pad_left(obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_pad_right(obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
         }
+        {
+            // go_history
+            lv_obj_t *obj = lv_img_create(parent_obj);
+            objects.go_history = obj;
+            lv_obj_set_pos(obj, 766, 0);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_img_set_src(obj, &img_settings);
+            lv_obj_add_event_cb(obj, event_handler_cb_main_go_history, LV_EVENT_ALL, flowState);
+            lv_obj_add_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+            lv_obj_set_style_img_recolor(obj, lv_color_hex(0xff595858), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(obj, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_left(obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
     }
     
     tick_screen_main();
@@ -775,6 +813,7 @@ void delete_screen_main() {
     objects.obj11 = 0;
     objects.solar_error = 0;
     objects.go_config = 0;
+    objects.go_history = 0;
     deletePageFlowState(0);
 }
 
@@ -882,7 +921,7 @@ void tick_screen_main() {
         }
     }
     {
-        const char *new_val = evalTextProperty(flowState, 34, 3, "Failed to evaluate Text in Label widget");
+        const char *new_val = evalTextProperty(flowState, 33, 3, "Failed to evaluate Text in Label widget");
         const char *cur_val = lv_label_get_text(objects.obj9);
         if (strcmp(new_val, cur_val) != 0) {
             tick_value_change_obj = objects.obj9;
@@ -891,7 +930,7 @@ void tick_screen_main() {
         }
     }
     {
-        int32_t new_val = evalIntegerProperty(flowState, 35, 3, "Failed to evaluate Value in Arc widget");
+        int32_t new_val = evalIntegerProperty(flowState, 34, 3, "Failed to evaluate Value in Arc widget");
         int32_t cur_val = lv_arc_get_value(objects.pv_power);
         if (new_val != cur_val) {
             tick_value_change_obj = objects.pv_power;
@@ -937,8 +976,58 @@ void tick_screen_main() {
     }
 }
 
-void create_screen_config() {
+void create_screen_history() {
     void *flowState = getFlowState(0, 1);
+    (void)flowState;
+    lv_obj_t *obj = lv_obj_create(0);
+    objects.history = obj;
+    lv_obj_set_pos(obj, 0, 0);
+    lv_obj_set_size(obj, 800, 480);
+    {
+        lv_obj_t *parent_obj = obj;
+        {
+            // go_main_hist
+            lv_obj_t *obj = lv_img_create(parent_obj);
+            objects.go_main_hist = obj;
+            lv_obj_set_pos(obj, 0, 0);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_img_set_src(obj, &img_solar);
+            lv_obj_add_event_cb(obj, event_handler_cb_history_go_main_hist, LV_EVENT_ALL, flowState);
+            lv_obj_add_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+            lv_obj_set_style_img_recolor(obj, lv_color_hex(0xff000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(obj, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_left(obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        {
+            // chart_history
+            lv_obj_t *obj = lv_chart_create(parent_obj);
+            objects.chart_history = obj;
+            lv_obj_set_pos(obj, 0, 78);
+            lv_obj_set_size(obj, 800, 319);
+        }
+    }
+    
+    tick_screen_history();
+}
+
+void delete_screen_history() {
+    lv_obj_del(objects.history);
+    objects.history = 0;
+    objects.go_main_hist = 0;
+    objects.chart_history = 0;
+    deletePageFlowState(1);
+}
+
+void tick_screen_history() {
+    void *flowState = getFlowState(0, 1);
+    (void)flowState;
+}
+
+void create_screen_config() {
+    void *flowState = getFlowState(0, 2);
     (void)flowState;
     lv_obj_t *obj = lv_obj_create(0);
     objects.config = obj;
@@ -1187,11 +1276,26 @@ void create_screen_config() {
                     lv_obj_set_pos(obj, 5, 105);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_text_font(obj, &ui_font_roboto_reg_14, LV_PART_MAIN | LV_STATE_DEFAULT);
+                    lv_label_set_text(obj, "Pin:");
+                }
+                {
+                    lv_obj_t *obj = lv_label_create(parent_obj);
+                    objects.obj21 = obj;
+                    lv_obj_set_pos(obj, 31, 105);
+                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                    lv_obj_set_style_text_font(obj, &ui_font_roboto_med_18, LV_PART_MAIN | LV_STATE_DEFAULT);
+                    lv_label_set_text(obj, "");
+                }
+                {
+                    lv_obj_t *obj = lv_label_create(parent_obj);
+                    lv_obj_set_pos(obj, 106, 105);
+                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                    lv_obj_set_style_text_font(obj, &ui_font_roboto_reg_14, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_label_set_text(obj, "Array Size:");
                 }
                 {
                     lv_obj_t *obj = lv_label_create(parent_obj);
-                    lv_obj_set_pos(obj, 76, 105);
+                    lv_obj_set_pos(obj, 177, 105);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_text_font(obj, &ui_font_roboto_med_18, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_label_set_text(obj, "400");
@@ -1222,7 +1326,7 @@ void create_screen_config() {
                 }
                 {
                     lv_obj_t *obj = lv_label_create(parent_obj);
-                    objects.obj21 = obj;
+                    objects.obj22 = obj;
                     lv_obj_set_pos(obj, 0, 42);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_text_font(obj, &ui_font_roboto_med_18, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -1238,7 +1342,7 @@ void create_screen_config() {
                 }
                 {
                     lv_obj_t *obj = lv_label_create(parent_obj);
-                    objects.obj22 = obj;
+                    objects.obj23 = obj;
                     lv_obj_set_pos(obj, 5, 80);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_text_font(obj, &ui_font_roboto_med_18, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -1267,11 +1371,12 @@ void delete_screen_config() {
     objects.obj20 = 0;
     objects.obj21 = 0;
     objects.obj22 = 0;
-    deletePageFlowState(1);
+    objects.obj23 = 0;
+    deletePageFlowState(2);
 }
 
 void tick_screen_config() {
-    void *flowState = getFlowState(0, 1);
+    void *flowState = getFlowState(0, 2);
     (void)flowState;
     {
         bool new_val = evalBooleanProperty(flowState, 3, 3, "Failed to evaluate Disabled state");
@@ -1365,7 +1470,7 @@ void tick_screen_config() {
         }
     }
     {
-        const char *new_val = evalTextProperty(flowState, 29, 3, "Failed to evaluate Text in Label widget");
+        const char *new_val = evalTextProperty(flowState, 26, 3, "Failed to evaluate Text in Label widget");
         const char *cur_val = lv_label_get_text(objects.obj21);
         if (strcmp(new_val, cur_val) != 0) {
             tick_value_change_obj = objects.obj21;
@@ -1379,6 +1484,15 @@ void tick_screen_config() {
         if (strcmp(new_val, cur_val) != 0) {
             tick_value_change_obj = objects.obj22;
             lv_label_set_text(objects.obj22, new_val);
+            tick_value_change_obj = NULL;
+        }
+    }
+    {
+        const char *new_val = evalTextProperty(flowState, 33, 3, "Failed to evaluate Text in Label widget");
+        const char *cur_val = lv_label_get_text(objects.obj23);
+        if (strcmp(new_val, cur_val) != 0) {
+            tick_value_change_obj = objects.obj23;
+            lv_label_set_text(objects.obj23, new_val);
             tick_value_change_obj = NULL;
         }
     }
@@ -1396,14 +1510,15 @@ void change_color_theme(uint32_t theme_index) {
     if (objects.obj12) lv_obj_set_style_bg_color(objects.obj12, lv_color_hex(theme_colors[theme_index][1]), LV_PART_KNOB | LV_STATE_DEFAULT);
     
     if (objects.main) lv_obj_invalidate(objects.main);
+    if (objects.history) lv_obj_invalidate(objects.history);
     if (objects.config) lv_obj_invalidate(objects.config);
 }
 
 extern void add_style(lv_obj_t *obj, int32_t styleIndex);
 extern void remove_style(lv_obj_t *obj, int32_t styleIndex);
 
-static const char *screen_names[] = { "Main", "Config" };
-static const char *object_names[] = { "main", "config", "obj0", "go_config", "go_main", "wifi_btn", "inverter_container", "ac_watts_arc", "obj1", "inv_error", "solar_container", "soc", "batt_indicator_image", "batt_alarm", "soc_unknown_container", "soc_container", "obj2", "pv_power", "image_solar", "yield", "image_sun", "solar_error", "obj3", "obj4", "obj5", "obj6", "obj7", "obj8", "obj9", "obj10", "obj11", "obj12", "obj13", "obj14", "obj15", "obj16", "obj17", "obj18", "obj19", "obj20", "obj21", "obj22" };
+static const char *screen_names[] = { "Main", "History", "Config" };
+static const char *object_names[] = { "main", "history", "config", "obj0", "go_config", "go_history", "go_main_hist", "go_main", "wifi_btn", "inverter_container", "ac_watts_arc", "obj1", "inv_error", "solar_container", "soc", "batt_indicator_image", "batt_alarm", "soc_unknown_container", "soc_container", "obj2", "pv_power", "image_solar", "yield", "image_sun", "solar_error", "obj3", "obj4", "obj5", "obj6", "obj7", "obj8", "obj9", "obj10", "obj11", "chart_history", "obj12", "obj13", "obj14", "obj15", "obj16", "obj17", "obj18", "obj19", "obj20", "obj21", "obj22", "obj23" };
 static const char *style_names[] = { "Labels", "Arcs", "Images", "Labels_Error", "Device_Config" };
 static const char *theme_names[] = { "Default" };
 
@@ -1415,6 +1530,7 @@ uint32_t theme_colors[1][2] = {
 typedef void (*create_screen_func_t)();
 create_screen_func_t create_screen_funcs[] = {
     create_screen_main,
+    create_screen_history,
     create_screen_config,
 };
 void create_screen(int screen_index) {
@@ -1427,6 +1543,7 @@ void create_screen_by_id(enum ScreensEnum screenId) {
 typedef void (*delete_screen_func_t)();
 delete_screen_func_t delete_screen_funcs[] = {
     delete_screen_main,
+    delete_screen_history,
     delete_screen_config,
 };
 void delete_screen(int screen_index) {
@@ -1439,6 +1556,7 @@ void delete_screen_by_id(enum ScreensEnum screenId) {
 typedef void (*tick_screen_func_t)();
 tick_screen_func_t tick_screen_funcs[] = {
     tick_screen_main,
+    tick_screen_history,
     tick_screen_config,
 };
 void tick_screen(int screen_index) {
@@ -1464,5 +1582,6 @@ void create_screens() {
     lv_disp_set_theme(dispp, theme);
     
     create_screen_main();
+    create_screen_history();
     create_screen_config();
 }

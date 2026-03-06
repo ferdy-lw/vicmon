@@ -31,6 +31,7 @@ const STACK_SIZE: usize = 10240;
 struct ConfigData<'a> {
     mppt_mac: &'a str,
     mppt_key: &'a str,
+    mppt_pin: u32,
     bmv_mac: &'a str,
     bmv_key: &'a str,
     inv_mac: &'a str,
@@ -61,7 +62,7 @@ impl<'a> HttpServer<'a> {
         let devices = DEVICES.read().unwrap();
 
         let values = format!(
-            "invmac: '{}', invkey: '{}', invpin: '{}', mpptmac: '{}', mpptkey: '{}', bmvmac: '{}', bmvkey: '{}'",
+            "invmac: '{}', invkey: '{}', invpin: '{}', mpptmac: '{}', mpptkey: '{}', mpptpin: '{}', bmvmac: '{}', bmvkey: '{}'",
             hex::encode_upper(devices.device_addr(DeviceType::Inverter).addr()),
             hex::encode_upper(devices.device_key(DeviceType::Inverter)),
             format!(
@@ -70,6 +71,7 @@ impl<'a> HttpServer<'a> {
             ),
             hex::encode_upper(devices.device_addr(DeviceType::Mppt).addr()),
             hex::encode_upper(devices.device_key(DeviceType::Mppt)),
+            format!("{:06}", devices.device_pin(DeviceType::Mppt).unwrap_or(0)),
             hex::encode_upper(devices.device_addr(DeviceType::Bmv).addr()),
             hex::encode_upper(devices.device_key(DeviceType::Bmv)),
         );
@@ -134,7 +136,7 @@ impl<'a> HttpServer<'a> {
                     }
                 };
 
-                let msg = HttpServer::save_device(DeviceType::Mppt, mac, key, None);
+                let msg = HttpServer::save_device(DeviceType::Mppt, mac, key, Some(form.mppt_pin));
                 write!(resp, "MPPT: {msg}\n")?;
 
                 let mac = match <Mac>::from_hex(form.bmv_mac) {
