@@ -3,3 +3,4 @@
 #include "components/ui/ui/ui.h"
 #include "components/ui/ui/vars.h"
 #include "components/ui/ui/screens.h"
+#include "components/ui/ui/fonts.h"

@@ -1,6 +1,11 @@
-use std::sync::{
-    atomic::{AtomicU8, Ordering},
-    mpsc::{self, Sender},
+use core::option::Option;
+use std::{
+    fmt::Display,
+    sync::{
+        LazyLock,
+        atomic::{AtomicU8, Ordering},
+        mpsc::{self, Sender},
+    },
 };
 
 use esp_idf_svc::{
@@ -13,10 +18,12 @@ use esp_idf_svc::{
 
 use super::*;
 
+use crate::ui::history::update_history_chart;
+
 #[derive(Clone, Copy, Debug, Default)]
-pub struct History {
+pub struct HistoryDay {
     pub day: u8,
-    pub power: u32,
+    pub yield_: u32,
     pub p_max: u32,
     pub v_max: f32,
     pub bat_max: f32,
@@ -27,7 +34,7 @@ pub struct History {
     pub errors: u8,
 }
 
-impl History {
+impl HistoryDay {
     pub fn from_raw(day: u8, bytes: &[u8]) -> Self {
         // 0000   |data 08| |source 03 |2byte cmd 19 |id 10 51| |type arr? 58  |num bytes 22
         // |err? 00 | yield 4c 00 00  00| ff ff ff ff
@@ -35,7 +42,7 @@ impl History {
         // 0020   01 00 00 | ba 00 |vmx 67 12| fc 00
 
         let errors = bytes[0]; //u8::from_le_bytes(bytes[0].try_into().unwrap()); // maybe error?
-        let power = u32::from_le_bytes(bytes[1..=4].try_into().unwrap()) * 10; // wh (yield is in .01kwh units)
+        let yield_ = u32::from_le_bytes(bytes[1..=4].try_into().unwrap()) * 10; // wh (yield is in .01kwh units)
         // 5..==8 ?
         let bat_max = u16::from_le_bytes(bytes[9..=10].try_into().unwrap()) as f32 * 0.01; // v (bmx is in .01v units)
         let bat_min = u16::from_le_bytes(bytes[11..=12].try_into().unwrap()) as f32 * 0.01; // v (bmn is in .01v units)
@@ -52,7 +59,7 @@ impl History {
 
         Self {
             day,
-            power,
+            yield_,
             p_max,
             v_max,
             bat_max,
@@ -63,7 +70,86 @@ impl History {
             errors,
         }
     }
+
+    pub fn abs_pct(&self) -> f32 {
+        self.abs.as_secs_f32()
+            / self
+                .bulk
+                .saturating_add(self.abs)
+                .saturating_add(self.float)
+                .as_secs_f32()
+    }
+
+    pub fn bulk_pct(&self) -> f32 {
+        self.bulk.as_secs_f32()
+            / self
+                .bulk
+                .saturating_add(self.abs)
+                .saturating_add(self.float)
+                .as_secs_f32()
+    }
 }
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct HistoryLifetime {
+    pub lifetime_yield: u32,
+    pub _yield_since_reset: u32,
+}
+
+impl HistoryLifetime {
+    pub fn from_raw(bytes: &[u8]) -> Self {
+        // 0000   |data 08| |source 03 |2byte cmd 19 |id 10 4f| |type arr? 58| |num bytes 22
+        // |err? 01| |?00 00 00 00 |?00 |lftm b5 03 01
+        // 0010   00| |lftm since rst b5 03 01 00| ae 13 79 06 1e 00 00 ff ff ff ff
+        // 0020   ff ff ff ff ff ff ff ff ff
+
+        // NOTE: these may be the wrong way around?
+        let lifetime_yield = u32::from_le_bytes(bytes[6..=9].try_into().unwrap()) * 10; // wh (yield is in .01kwh units)
+        let yield_since_reset = u32::from_le_bytes(bytes[10..=13].try_into().unwrap()) * 10; // wh (yield is in .01kwh units)
+
+        Self {
+            lifetime_yield,
+            _yield_since_reset: yield_since_reset,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct History {
+    pub last_loaded: Option<Instant>,
+    pub lifetime: Option<HistoryLifetime>,
+    pub history: Box<[Option<HistoryDay>]>,
+}
+
+impl History {
+    pub fn should_load(&self) -> bool {
+        self.last_loaded.is_none()
+            || self
+                .last_loaded
+                .is_some_and(|last| Instant::now().duration_since(last).as_secs() > 1800)
+    }
+
+    pub fn reset(&mut self) {
+        self.last_loaded.take();
+        self.history.fill(None);
+    }
+}
+
+impl Display for History {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let _ = f.write_fmt(format_args!("Last Loaded: {:?}\n", self.last_loaded));
+        for hist in self.history.iter() {
+            let _ = f.write_fmt(format_args!("{hist:?}\n"));
+        }
+        f.write_fmt(format_args!("Lifetime: {:?}", self.lifetime))
+    }
+}
+
+pub static HISTORY: RwLock<LazyLock<History>> = RwLock::new(LazyLock::new(|| History {
+    last_loaded: None,
+    lifetime: None,
+    history: Box::new([None; DAYS]),
+}));
 
 static RECEIVED_REQUEST: &[u8] = &[0xf9, 0x01]; // ACK when the mppt has accepted the command request
 static START_CTL_FLOW_1: &[u8] = &[0xfa, 0x80, 0xff];
@@ -72,7 +158,7 @@ static COMMAND_REQUEST_BEGIN: &[u8] = &[0x01];
 static COMMAND_REQUEST_TYPE_3: &[u8] = &[0x03, 0x03];
 const HISTORY_LIFETIME_COMMAND: u8 = 0x4F; // This is the 'day' part of a history command that indicates lifetime data
 const HISTORY_DAY_0_COMMAND: u8 = 0x50; // Day 0 is 0x50, 1 is 0x51 ...
-const DAYS: usize = 10;
+pub const DAYS: usize = 14;
 const HISTORY_REQUEST_PREFIX: [u8; 5] = [0x05, 0x03, 0x81, 0x19, 0x10]; // command starts with this and ends with a 0x50+day_num up to 4f
 const HISTORY_REQUEST_PREFIX_LEN: usize = HISTORY_REQUEST_PREFIX.len();
 const fn history_command() -> [u8; (HISTORY_REQUEST_PREFIX_LEN + 1) * (DAYS + 1)] {
@@ -106,7 +192,6 @@ static HISTORY_RESPONSE_PREFIX: &[u8] = &[0x08, 0x03, 0x19, 0x10]; // command re
 pub(super) struct Mppt {
     command: Arc<AtomicU8>,
     notify_tx: Arc<Mutex<Option<Sender<(u16, Vec<u8>)>>>>,
-    pub history: Arc<Mutex<Vec<History>>>,
     long_req_desc_handle: Arc<Mutex<Option<Handle>>>,
 }
 
@@ -115,7 +200,7 @@ impl Mppt {
         Self {
             command: Arc::new(AtomicU8::new(0)),
             notify_tx: Arc::new(Mutex::new(None)),
-            history: Arc::new(Mutex::new(Vec::new())),
+            // history: Arc::new(Mutex::new(Vec::new())),
             long_req_desc_handle: Arc::new(Mutex::new(None)),
         }
     }
@@ -153,7 +238,8 @@ impl Mppt {
                         let (notify_tx, notify_rx) = mpsc::channel();
 
                         *self.notify_tx.lock().unwrap() = Some(notify_tx);
-                        Mppt::on_notify(notify_rx, Arc::clone(&self.history));
+                        // Mppt::on_notify(notify_rx, Arc::clone(&self.history));
+                        Mppt::on_notify(notify_rx);
 
                         // For all the characteristics, register for notify
                         for char in chars[..chars_count].iter() {
@@ -255,18 +341,31 @@ impl Mppt {
 
                         if let Some(command) = command
                             && let Some(gattc_if) = state.gattc_if_mppt
-                            && let Some(handle) = state.request_char_handle
+                            && let Some(long_request_handle) = state.long_request_char_handle
+                            && let Some(request_handle) = state.request_char_handle
                         {
-                            info!("Writing command: {command:?}");
+                            let byte_count = command.len();
+                            let mut start = 0;
 
-                            client.gattc.write_characteristic(
-                                gattc_if,
-                                conn_id,
-                                handle,
-                                command,
-                                GattWriteType::NoResponse,
-                                GattAuthReq::Mitm,
-                            )?;
+                            while start < byte_count {
+                                let (handle, write_command) = if start + 74 < byte_count {
+                                    (long_request_handle, &command[start..(start + 74)])
+                                } else {
+                                    (request_handle, &command[start..])
+                                };
+                                start += 74;
+
+                                info!("Writing {handle} command: {write_command:?}");
+
+                                client.gattc.write_characteristic(
+                                    gattc_if,
+                                    conn_id,
+                                    handle,
+                                    write_command,
+                                    GattWriteType::NoResponse,
+                                    GattAuthReq::Mitm,
+                                )?;
+                            }
 
                             self.command.store(command_idx + 1, Ordering::Relaxed);
                         }
@@ -277,6 +376,13 @@ impl Mppt {
                         {
                             if value[4] == HISTORY_LIFETIME_COMMAND {
                                 // The other history all comes before this
+                                let lifetime = HistoryLifetime::from_raw(&value[7..]);
+
+                                if let Ok(history) = HISTORY.write().as_mut() {
+                                    history.last_loaded.replace(Instant::now());
+                                    history.lifetime.replace(lifetime);
+                                }
+
                                 info!("Got last history command response, closing");
                                 let _ = client.gattc.close(gattc_if, conn_id);
                             } else if let Some(tx) = self.notify_tx.lock().unwrap().as_ref() {
@@ -325,6 +431,14 @@ impl Mppt {
                     drop(tx);
                 }
                 self.command.store(0, Ordering::Relaxed);
+
+                let history = HISTORY.read().unwrap();
+
+                if let Some(history) = LazyLock::get(&history) {
+                    info!("History - {history}");
+                }
+
+                update_history_chart(&history.history, history.lifetime.as_ref());
             }
             _ => (),
         };
@@ -332,7 +446,8 @@ impl Mppt {
         Ok(())
     }
 
-    fn on_notify(notify_rx: Receiver<(u16, Vec<u8>)>, history: Arc<Mutex<Vec<History>>>) {
+    // fn on_notify(notify_rx: Receiver<(u16, Vec<u8>)>, history: Arc<Mutex<Vec<History>>>) {
+    fn on_notify(notify_rx: Receiver<(u16, Vec<u8>)>) {
         let _ = thread::Builder::new()
             .name("hist_bldr".to_string())
             .stack_size(3000)
@@ -341,19 +456,19 @@ impl Mppt {
                 loop {
                     match notify_rx.recv() {
                         Ok((_handle, value)) => {
-                            // info!("On notify handle {handle}, value {value:?}");
-
-                            // if value.len() >= 40 {
-                            //     let value = value.as_slice();
-
-                            //     if value.starts_with(&HISTORY_COMMAND_PREFIX) && value[4] >= 0x50 {
                             let day = value[4] - 0x50;
 
-                            let history_value = History::from_raw(day, &value[7..]);
+                            let history_value = HistoryDay::from_raw(day, &value[7..]);
 
-                            history.lock().as_mut().unwrap().push(history_value);
-                            // }
-                            // }
+                            if let Some(history) = HISTORY
+                                .write()
+                                .as_mut()
+                                .unwrap()
+                                .history
+                                .get_mut(day as usize)
+                            {
+                                history.replace(history_value);
+                            }
                         }
                         Err(e) => {
                             info!("Stop history builder thread {e:?}");

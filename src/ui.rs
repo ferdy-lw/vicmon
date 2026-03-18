@@ -1,6 +1,9 @@
 use std::{
     ffi::CString,
-    sync::{RwLock, atomic::AtomicBool},
+    sync::{
+        RwLock,
+        atomic::{AtomicBool, AtomicI32},
+    },
 };
 
 use self::ui::OnDuration;
@@ -30,8 +33,10 @@ pub static SOLAR_YIELD: RwLock<i32> = RwLock::new(0i32);
 pub static SOLAR_MODE: RwLock<Option<CString>> = RwLock::new(None);
 pub static SOLAR_ERROR: RwLock<Option<CString>> = RwLock::new(None);
 pub static IP_ADDR: RwLock<Option<CString>> = RwLock::new(None);
+pub static HIST_DET_DAY: AtomicI32 = AtomicI32::new(-2_i32); // Start with the loading widget
 
 pub static PANEL: RwLock<Panel> = RwLock::new(Panel::Main);
 
+pub mod history;
 pub mod ui;
 pub mod vars;

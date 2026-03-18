@@ -34,6 +34,16 @@ lv_style_t *get_style_device_config_MAIN_DEFAULT();
 void add_style_device_config(lv_obj_t *obj);
 void remove_style_device_config(lv_obj_t *obj);
 
+// Style: History_Details
+lv_style_t *get_style_history_details_MAIN_DEFAULT();
+void add_style_history_details(lv_obj_t *obj);
+void remove_style_history_details(lv_obj_t *obj);
+
+// Style: History_Details_Cont
+lv_style_t *get_style_history_details_cont_MAIN_DEFAULT();
+void add_style_history_details_cont(lv_obj_t *obj);
+void remove_style_history_details_cont(lv_obj_t *obj);
+
 
 
 #ifdef __cplusplus

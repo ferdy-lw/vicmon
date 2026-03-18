@@ -24,10 +24,11 @@ use log::{debug, error, info, warn};
 use victron_ble::{DeviceState, ErrorState, Mode};
 
 use crate::devices::*;
+use crate::ui::vars::set_var_hist_det_day;
 use crate::ui::{self, ON_DURATION};
 
 mod inverter;
-mod mppt;
+pub mod mppt;
 
 use inverter::Inverter;
 use mppt::Mppt;
@@ -196,7 +197,7 @@ impl Client {
                             != ui::INVERTER_ON.load(std::sync::atomic::Ordering::Relaxed)
                             && *DEVICES.read().unwrap().device_addr(DeviceType::Inverter) == bda)
                             || (matches!(*ui::PANEL.read().unwrap(), ui::Panel::History)
-                                && self.mppt.history.lock().unwrap().len() == 0
+                                && mppt::HISTORY.read().as_mut().unwrap().should_load()
                                 && *DEVICES.read().unwrap().device_addr(DeviceType::Mppt) == bda)
                         {
                             info!("Trigger connecting to remote {bda}");
@@ -218,6 +219,7 @@ impl Client {
                                         state.gattc_if_inv.unwrap_or(0)
                                     } else {
                                         info!("Connecting to MPPT {bda}");
+                                        set_var_hist_det_day(-2); // will call reset on history
                                         state.gattc_if_mppt.unwrap_or(0)
                                     };
 
@@ -560,13 +562,6 @@ impl Client {
                     state.flow_char_handle = None;
                     state.request_char_handle = None;
                     state.long_request_char_handle = None;
-
-                    let history = self.mppt.history.lock().unwrap();
-                    if history.len() > 0 {
-                        for hist in history.iter() {
-                            info!("Hist: {hist:?}");
-                        }
-                    }
 
                     info!("Disconnected, remote {addr}, reason {reason:?}");
                     self.gap.start_scanning(ON_DURATION.as_secs() as _)?;

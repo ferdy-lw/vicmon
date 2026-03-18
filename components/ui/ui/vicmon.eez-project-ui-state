@@ -1,9 +1,9 @@
 {
   "navigation": {
-    "selectedUserPageObject": "[vicmon.eez-project]:/userPages/2",
+    "selectedUserPageObject": "[vicmon.eez-project]:/userPages/1",
     "selectedActionObject": "[vicmon.eez-project]:/actions/0",
     "selectedGlobalVariableObject": "[vicmon.eez-project]:/variables/globalVariables/17",
-    "selectedStyleObject": "[vicmon.eez-project]:/lvglStyles/styles/4",
+    "selectedStyleObject": "[vicmon.eez-project]:/lvglStyles/styles/6",
     "selectedThemeObject": "[vicmon.eez-project]:/themes/0",
     "selectedThemeColorObject": "[vicmon.eez-project]:/colors/1",
     "selectedFontObject": "[vicmon.eez-project]:/fonts/0",
@@ -30,7 +30,7 @@
           },
           {
             "type": "border",
-            "selected": 1,
+            "selected": 0,
             "size": 159.03125,
             "location": "right",
             "children": [
@@ -204,6 +204,7 @@
               "type": "tabset",
               "id": "EDITORS",
               "weight": 65.26096822995461,
+              "selected": 3,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
               "children": [
@@ -243,7 +244,7 @@
                 {
                   "type": "tab",
                   "id": "#f3d0036a-59ce-4682-b140-76c8af12fa92",
-                  "name": "Config",
+                  "name": "History",
                   "component": "editor",
                   "config": {
                     "objectPath": "[vicmon.eez-project]:/userPages/1",
@@ -1053,7 +1054,11 @@
       "1": {},
       "2": {},
       "3": {},
-      "4": {
+      "4": {},
+      "5": {
+        "$selected": true
+      },
+      "6": {
         "$selected": true
       }
     },
@@ -1063,15 +1068,12 @@
           "1": {
             "0": {}
           },
-          "2": {
-            "0": {}
-          },
           "3": {
             "0": {},
-            "4": {}
-          },
-          "4": {},
-          "5": {}
+            "4": {},
+            "11": {},
+            "13": {}
+          }
         }
       },
       "transform": {
@@ -1169,9 +1171,9 @@
     "SHADOW",
     "MISCELLANEOUS",
     "POSITION AND SIZE",
-    "MARGIN",
     "PADDING",
-    "BACKGROUND"
+    "BACKGROUND",
+    "MARGIN"
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,

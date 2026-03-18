@@ -1,4 +1,9 @@
-use std::{ffi::CStr, sync::LazyLock};
+use std::{
+    ffi::CStr,
+    sync::{LazyLock, atomic::Ordering},
+};
+
+use crate::{client::mppt::HISTORY, ui::history::history_details};
 
 use super::*;
 
@@ -172,6 +177,32 @@ pub extern "C" fn get_var_solar_error() -> Cstring {
 #[unsafe(no_mangle)]
 pub extern "C" fn set_var_solar_error(_value: Cstring) {
     // NOOP
+}
+
+//--------
+// HISTORY
+//--------
+#[unsafe(no_mangle)]
+pub extern "C" fn get_var_hist_det_day() -> i32 {
+    HIST_DET_DAY.load(Ordering::Relaxed)
+}
+
+/// Set the day of the history details to show, where 0 is today.
+/// Set to -1 to hide the details dialog pane
+/// Set to -2 to show the loading widget and reload the history data
+#[unsafe(no_mangle)]
+pub extern "C" fn set_var_hist_det_day(day: i32) {
+    HIST_DET_DAY.store(day, Ordering::Relaxed);
+
+    if day == -2 {
+        HISTORY.write().as_mut().unwrap().reset();
+    } else if day > -1 {
+        if let Some(Some(history)) = HISTORY.read().unwrap().history.get(day as usize) {
+            unsafe {
+                history_details(history);
+            }
+        }
+    }
 }
 
 //--------

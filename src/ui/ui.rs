@@ -28,7 +28,9 @@ use num_enum::TryFromPrimitive;
 use crate::{
     client::Client,
     devices::{Device, DeviceType},
-    ui::vars::{CONFIG_BMV, CONFIG_INV, CONFIG_MPPT, get_var_backlight_delay},
+    ui::vars::{
+        CONFIG_BMV, CONFIG_INV, CONFIG_MPPT, get_var_backlight_delay, set_var_hist_det_day,
+    },
     wifi::Wifi,
 };
 
@@ -76,7 +78,7 @@ pub fn setup_backlight(sys_loop: EspEventLoop<System>) {
 
     thread::spawn(move || {
         loop {
-            // Only turn the backlight off if we're on the main screen
+            // Only turn the backlight off if we're tracking touch
             if LAST_TOUCH.read().unwrap().is_some() {
                 let touched_recently = ON_DURATION.recent_touch();
 
@@ -118,6 +120,7 @@ fn turn_backlight_on(on: bool) -> bool {
 pub enum UiObject {
     WifiBtn,
     MainScreen,
+    HistoryScreen,
     GoMain,
     GoConfig,
     GoHistory,
@@ -178,6 +181,12 @@ pub unsafe fn subscribe_ui_events(
             lv_event_cb,
             lv_event_code_t_LV_EVENT_PRESSED,
             &(UiObject::GoHistory as u8) as *const _ as *mut _,
+        );
+        lv_obj_add_event_cb(
+            objects.history,
+            lv_event_cb,
+            lv_event_code_t_LV_EVENT_PRESSED,
+            &(UiObject::HistoryScreen as u8) as *const _ as *mut _,
         );
 
         lv_obj_add_event_cb(
@@ -269,7 +278,7 @@ fn on_ui_event(
                     // PRESSED
                     // --------
                     UiEvent::Pressed(ui_object) => match ui_object {
-                        UiObject::MainScreen => {
+                        UiObject::MainScreen | UiObject::HistoryScreen => {
                             // Record the last touch to keep the backlight on
                             LAST_TOUCH.write().unwrap().replace(Instant::now());
                         }
@@ -319,10 +328,18 @@ fn on_ui_event(
                         UiObject::GoHistory => {
                             *ui::PANEL.write().unwrap() = ui::Panel::History;
 
-                            // Stop turning backlight off
-                            LAST_TOUCH.write().unwrap().take();
+                            // // Stop turning backlight off
+                            // LAST_TOUCH.write().unwrap().take();
 
-                            turn_backlight_on(true);
+                            // turn_backlight_on(true);
+                            // Update the duration time
+                            ON_DURATION.new_time(get_var_backlight_delay() as _);
+
+                            // Start backlight off handling
+                            LAST_TOUCH.write().unwrap().replace(Instant::now());
+
+                            // Don't show a detail panel
+                            set_var_hist_det_day(-1);
                         }
                     },
                 };

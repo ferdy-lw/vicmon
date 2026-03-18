@@ -66,6 +66,8 @@ extern const char *get_var_bmv_mac();
 extern void set_var_bmv_mac(const char *value);
 extern const char *get_var_bmv_key();
 extern void set_var_bmv_key(const char *value);
+extern int32_t get_var_hist_det_day();
+extern void set_var_hist_det_day(int32_t value);
 
 
 #ifdef __cplusplus
