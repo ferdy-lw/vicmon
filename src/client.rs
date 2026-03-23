@@ -226,11 +226,13 @@ impl Client {
                                 self.gattc.enh_open(gattc_if, &conn_params)?;
                             }
                         } else {
-                            let _ = self.tx.send(ScanData {
+                            if let Err(e) = self.tx.try_send(ScanData {
                                 bda: bda.into(),
                                 ble_adv: ble_adv.map(|d| d.to_owned()),
                                 data_len: adv_data_len as usize + scan_rsp_len as usize,
-                            });
+                            }) {
+                                info!("Error sending scan result data to decoder {e:?} for {bda}");
+                            };
                         }
                     }
                     GapSearchEvent::InquiryComplete(num) => {
