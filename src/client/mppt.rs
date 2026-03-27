@@ -18,7 +18,7 @@ use esp_idf_svc::{
 
 use super::*;
 
-use crate::ui::history::update_history_chart;
+use crate::ui::history::update_history_charts;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct HistoryDay {
@@ -438,7 +438,7 @@ impl Mppt {
                     info!("History - {history}");
                 }
 
-                update_history_chart(&history.history, history.lifetime.as_ref());
+                update_history_charts(&history.history, history.lifetime.as_ref());
             }
             _ => (),
         };

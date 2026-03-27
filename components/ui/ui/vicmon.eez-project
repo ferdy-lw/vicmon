@@ -97,6 +97,7 @@
       "fileSystemPath": "",
       "lvglInclude": "lvgl.h",
       "screensLifetimeSupport": true,
+      "useDockerDesktop": true,
       "generateSourceCodeForEezFramework": true,
       "compressFlowDefinition": false,
       "executionQueueSize": 1000,
@@ -403,6 +404,7 @@
         }
       ],
       "localVariables": [],
+      "componentGroups": [],
       "userProperties": [],
       "name": "solar_highlight",
       "implementationType": "flow"
@@ -507,6 +509,7 @@
         }
       ],
       "localVariables": [],
+      "componentGroups": [],
       "userProperties": [],
       "name": "solar_value_loop",
       "implementationType": "flow"
@@ -955,7 +958,8 @@
                       "pivotY": 0,
                       "zoom": 256,
                       "angle": 0,
-                      "innerAlign": "CENTER"
+                      "innerAlign": "CENTER",
+                      "sizeMode": "VIRTUAL"
                     }
                   ],
                   "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
@@ -976,16 +980,20 @@
                   },
                   "group": "",
                   "groupIndex": 0,
+                  "useAngle": false,
                   "rangeMin": 0,
                   "rangeMinType": "literal",
                   "rangeMax": 1500,
                   "rangeMaxType": "literal",
                   "value": "ac_watts",
                   "valueType": "expression",
-                  "bgStartAngle": 0,
-                  "bgEndAngle": 360,
                   "mode": "NORMAL",
-                  "rotation": 90
+                  "bgStartAngle": 0,
+                  "bgStartAngleType": "literal",
+                  "bgEndAngle": 360,
+                  "bgEndAngleType": "literal",
+                  "rotation": 90,
+                  "rotationType": "literal"
                 },
                 {
                   "objID": "d719fc28-bc66-4a93-8288-6b7c5cda241c",
@@ -1281,7 +1289,8 @@
                           "pivotY": 0,
                           "zoom": 256,
                           "angle": 0,
-                          "innerAlign": "CENTER"
+                          "innerAlign": "CENTER",
+                          "sizeMode": "VIRTUAL"
                         },
                         {
                           "objID": "4adaed77-ffee-4746-c25e-623dfd2d9668",
@@ -2085,7 +2094,8 @@
                           "pivotY": 0,
                           "zoom": 256,
                           "angle": 0,
-                          "innerAlign": "CENTER"
+                          "innerAlign": "CENTER",
+                          "sizeMode": "VIRTUAL"
                         },
                         {
                           "objID": "eb4e6f7a-37fc-4717-cdf6-870d19194fb0",
@@ -2237,16 +2247,20 @@
                   },
                   "group": "",
                   "groupIndex": 0,
+                  "useAngle": false,
                   "rangeMin": 0,
                   "rangeMinType": "literal",
                   "rangeMax": 100,
                   "rangeMaxType": "literal",
                   "value": "batt_soc",
                   "valueType": "expression",
-                  "bgStartAngle": 0,
-                  "bgEndAngle": 360,
                   "mode": "NORMAL",
-                  "rotation": 90
+                  "bgStartAngle": 0,
+                  "bgStartAngleType": "literal",
+                  "bgEndAngle": 360,
+                  "bgEndAngleType": "literal",
+                  "rotation": 90,
+                  "rotationType": "literal"
                 },
                 {
                   "objID": "f4aacbc6-7e10-4adb-a31c-7d45ef3d4baf",
@@ -2286,16 +2300,20 @@
                   },
                   "group": "",
                   "groupIndex": 0,
+                  "useAngle": false,
                   "rangeMin": 0,
                   "rangeMinType": "literal",
                   "rangeMax": 400,
                   "rangeMaxType": "literal",
                   "value": "solar_watts",
                   "valueType": "expression",
-                  "bgStartAngle": 0,
-                  "bgEndAngle": 90,
                   "mode": "NORMAL",
-                  "rotation": 135
+                  "bgStartAngle": 0,
+                  "bgStartAngleType": "literal",
+                  "bgEndAngle": 90,
+                  "bgEndAngleType": "literal",
+                  "rotation": 135,
+                  "rotationType": "literal"
                 },
                 {
                   "objID": "fac15e94-92e6-4b0b-fe7d-1d4329d547c0",
@@ -2371,7 +2389,8 @@
                       "pivotY": 0,
                       "zoom": 256,
                       "angle": 0,
-                      "innerAlign": "CENTER"
+                      "innerAlign": "CENTER",
+                      "sizeMode": "VIRTUAL"
                     },
                     {
                       "objID": "02c4ed22-09a5-46dc-a424-72740a3744f9",
@@ -2580,16 +2599,20 @@
                   },
                   "group": "",
                   "groupIndex": 0,
+                  "useAngle": false,
                   "rangeMin": 0,
                   "rangeMinType": "literal",
                   "rangeMax": 850,
                   "rangeMaxType": "literal",
                   "value": "solar_yield",
                   "valueType": "expression",
-                  "bgStartAngle": 0,
-                  "bgEndAngle": 90,
                   "mode": "REVERSE",
-                  "rotation": 315
+                  "bgStartAngle": 0,
+                  "bgStartAngleType": "literal",
+                  "bgEndAngle": 90,
+                  "bgEndAngleType": "literal",
+                  "rotation": 315,
+                  "rotationType": "literal"
                 },
                 {
                   "objID": "98882a91-2277-4618-b5c2-48a92a852518",
@@ -2665,7 +2688,8 @@
                       "pivotY": 0,
                       "zoom": 256,
                       "angle": 0,
-                      "innerAlign": "CENTER"
+                      "innerAlign": "CENTER",
+                      "sizeMode": "VIRTUAL"
                     },
                     {
                       "objID": "4f91b590-b794-43f2-c03b-ba1242e7c6ec",
@@ -2911,7 +2935,7 @@
             {
               "objID": "31e1a12d-c59a-4491-e540-768c75d50d67",
               "type": "LVGLImageWidget",
-              "left": 0,
+              "left": 766,
               "top": 0,
               "width": 34,
               "height": 34,
@@ -2973,12 +2997,13 @@
               "pivotY": 0,
               "zoom": 256,
               "angle": 0,
-              "innerAlign": "CENTER"
+              "innerAlign": "CENTER",
+              "sizeMode": "VIRTUAL"
             },
             {
               "objID": "43e3efc5-bb95-4c13-a4b2-30112475f74d",
               "type": "LVGLImageWidget",
-              "left": 766,
+              "left": 0,
               "top": 0,
               "width": 34,
               "height": 34,
@@ -3034,13 +3059,14 @@
               },
               "group": "",
               "groupIndex": 0,
-              "image": "settings",
+              "image": "bars",
               "setPivot": false,
               "pivotX": 0,
               "pivotY": 0,
               "zoom": 256,
               "angle": 0,
-              "innerAlign": "CENTER"
+              "innerAlign": "CENTER",
+              "sizeMode": "VIRTUAL"
             }
           ],
           "widgetFlags": "CLICKABLE|PRESS_LOCK|CLICK_FOCUSABLE|GESTURE_BUBBLE|SNAPPABLE|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER",
@@ -3108,8 +3134,8 @@
           "type": "SwitchActionComponent",
           "left": 379,
           "top": -273,
-          "width": 250,
-          "height": 124,
+          "width": 337,
+          "height": 134,
           "customInputs": [
             {
               "objID": "793079c8-60c1-4735-e549-a0fe0cad45bc",
@@ -3535,6 +3561,7 @@
         }
       ],
       "localVariables": [],
+      "componentGroups": [],
       "userProperties": [],
       "name": "Main",
       "left": 0,
@@ -3634,7 +3661,8 @@
               "pivotY": 0,
               "zoom": 256,
               "angle": 0,
-              "innerAlign": "CENTER"
+              "innerAlign": "CENTER",
+              "sizeMode": "VIRTUAL"
             },
             {
               "objID": "d272b283-905a-4014-d5fa-eeb95d7f026b",
@@ -3695,13 +3723,14 @@
               },
               "group": "",
               "groupIndex": 0,
-              "image": "sun",
+              "image": "reload",
               "setPivot": false,
               "pivotX": 0,
               "pivotY": 0,
               "zoom": 256,
               "angle": 0,
-              "innerAlign": "CENTER"
+              "innerAlign": "CENTER",
+              "sizeMode": "VIRTUAL"
             },
             {
               "objID": "51667ac0-1d79-4b73-dca1-aa96fec20548",
@@ -6568,6 +6597,7 @@
         }
       ],
       "localVariables": [],
+      "componentGroups": [],
       "userProperties": [],
       "name": "History",
       "left": 0,
@@ -6668,7 +6698,8 @@
               "pivotY": 0,
               "zoom": 256,
               "angle": 0,
-              "innerAlign": "CENTER"
+              "innerAlign": "CENTER",
+              "sizeMode": "VIRTUAL"
             },
             {
               "objID": "2db46fd7-5094-4472-f2d3-6d514b2db2aa",
@@ -8318,6 +8349,7 @@
         }
       ],
       "localVariables": [],
+      "componentGroups": [],
       "userProperties": [],
       "name": "Config",
       "left": 0,
@@ -8720,6 +8752,24 @@
       "objID": "00b98e49-ed37-4856-dc62-2e3751b8ae69",
       "name": "settings",
       "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAC2klEQVR4AcyUzWsTURTFZ5J2YV2JuukX9A+Q2irVgJuIxYUYd8G6EhcWquLHoju1iiCC0C6MqLhxVckuKCKiKLoIWKv5A2IgnwvB7qybJOPvPN6MySSB2QiGObnn3nvevfPuzJuY849//0eDcrk8X61WvU4oFmXzkXYQi8XehIv1i4U18iM1kFCYmJhwBfGo6GlQq9VyGkWlUsl5nheDfxlUDO2mNNKi82TD2q4GCI6zICWR67opCrTgB4CuDf1ZGI52VhppFZdVDXEfXQ0QvFai2WzOsHhNHPzUWMAc3FziwMXZAg7aVdbOiGNNDXEhaFCv188pgODX1NRUYXJy8qqKgD2KC4zhPLqlbDYbl09uN3DRXhsfHy8Q+w0cdnVWVggaULioAHezE8GiuA+2fZriHv7jdrudSSQSTfyb+MElDc4O4KD5LisEDUZHRz9SPKMg9hEFPosLNF+XDWGl0WiMKIb2Q4fmATv6pLgQNJBD4iLFb4iD98BhJKdk+6HVai0rzhr/oV9nZJcU89HVwA9aa3IUse5gw6HTA3fYRTOsMkX8IHPMILptffN6squc9XtMsVi8oyA7mJUFdxnXPWxwBQ2Y5xGKLynDggW2elRcwD8jG8JKMpk0dywtmgWbX6bJPsudoAHv/mEb3Oaun1tuDP46RTSGRcZxIZ/PD+HfMkn7h0Zrtq17yNq/DRDct8GRUqk0zau6xp142B827lD0ydjY2MN0Oq0T7pDfAtKsotuPzrxV6J7CzRXswHiOc0J2eHi4wJYvi2P3qgj4Kl+AF4DOxS75aK6Ab+LxePygrI+uBnR+ReIl0BvxgtOpE6sTqpD5FIiAaaBrA80Qxd/K4Rk+4zxtivvoaqAgTU4Cl4UpFrThnYUlCUBuDk2L8c7DtSb4RPiingZ+op/VWIR+uUGxSA24y2PhAsSC1zic6/QjNWBc7zSCThAzn5LOYv14pAb9FkaN/QEAAP//PO08twAAAAZJREFUAwA1fkhAYYSiOgAAAABJRU5ErkJggg==",
+      "bpp": 1,
+      "alwaysBuild": false,
+      "lvglBinaryOutputFormat": 3,
+      "lvglDither": false
+    },
+    {
+      "objID": "65c5822d-05fc-42c0-af25-60d345481ebe",
+      "name": "bars",
+      "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAmUlEQVR4AexSWwrAMAjbdo/e/2A9yEY+AkEpWuxglA1E6yPRsOt4+fsJQoGdRL33Wy1ECBocQdA/Xf4OgcqGOHuKu6C1dqplgUZ9jgDbqY0Gs3lHkB1kny6DmHn6NIHKhpgAkU8TYDu1CJj1NAEHZn2ZAHKp2QXKBCob4uUEFtC+yxdYQPvekED/CMQ8GbFalGd9Q4l42ir/AAAA//9+v2hRAAAABklEQVQDAIe1YDExWrKKAAAAAElFTkSuQmCC",
+      "bpp": 1,
+      "alwaysBuild": false,
+      "lvglBinaryOutputFormat": 3,
+      "lvglDither": false
+    },
+    {
+      "objID": "ddef12d9-7483-47ce-f014-c890e3b60282",
+      "name": "reload",
+      "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAACIUlEQVR4AeSUO2sUURiGZ9wFwUshJMKue3EErbQRbMRSGxsLwR/hP1A0EsFLYy/4CwRbrWxtbCxMlYRssrvZhQ0hgSTFZi+T5x3mgzmbk8mFpMoy777f+W7v2e/MngvBGX/OgUCv17vSbDa/t1qteAI/O51O/bAJOyOyBlbEut3v97fCMHxhvgw/HY1Gy+12u5fx7TMdAYuys0s0j1nfAEEcxx+q1WqYBaKv09i0chuNxk2tJ+EVYGc7SqTJPzWt1WpvtM6iUql8UgxfAwTFYjFh2Vl4BdKEeZrcT+2EtFMhWaRfiNzCnAOBb1x5AnfUTFBxHhC5pzijnO52u86o8gRUcxy8U/JgMPgmNjgC7MQ5SFtbch6T+15xzu2x2OAImPM0+UQCnMv2UTfhCFD4mTdheFAxYwiJ7YLL5B5JxBGg8CFvQoGr4S2290HkInNWc4ksWBIbe5Xav1JOyBEYj8fP5KVBcmCyfeD/cRX/Inlf4ORhYx9lFAqFl2KDI1Cv1zcIrIOAEfwQHwR+yW2EvipO7pIYwbVyubwi2+AIyEnhlBg8p/AvnPuQ85+ECAQIXhdnsU9AweFweE0MHtBA1/QMtvPgnwG6EO8qQE0iIjsLr0AURZv8Er0xq2nyrJplgX8WBBqLcqlZ1noSXgFLorBCgynwx3zGHOpvbtDINxbLEecKKIEG6+ARYs41whX+pFQqeXetOsOhApZ4Uj5zgT0AAAD//yjSAm8AAAAGSURBVAMA8LzjMdjN2qgAAAAASUVORK5CYII=",
       "bpp": 1,
       "alwaysBuild": false,
       "lvglBinaryOutputFormat": 3,

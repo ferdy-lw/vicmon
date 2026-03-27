@@ -17,6 +17,8 @@ extern const lv_img_dsc_t img_power;
 extern const lv_img_dsc_t img_solar;
 extern const lv_img_dsc_t img_sun;
 extern const lv_img_dsc_t img_settings;
+extern const lv_img_dsc_t img_bars;
+extern const lv_img_dsc_t img_reload;
 
 #ifndef EXT_IMG_DESC_T
 #define EXT_IMG_DESC_T
@@ -26,8 +28,7 @@ typedef struct _ext_img_desc_t {
 } ext_img_desc_t;
 #endif
 
-extern const ext_img_desc_t images[10];
-
+extern const ext_img_desc_t images[12];
 
 #ifdef __cplusplus
 }

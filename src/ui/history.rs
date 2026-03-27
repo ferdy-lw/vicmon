@@ -8,7 +8,7 @@ use esp_idf_svc::sys::lcd_bindings::{
     lv_chart_axis_t, lv_chart_get_pressed_point, lv_chart_get_series_next, lv_chart_refresh,
     lv_chart_set_all_value, lv_chart_set_axis_tick, lv_chart_set_div_line_count,
     lv_chart_set_next_value, lv_chart_set_point_count, lv_chart_set_range, lv_chart_set_type,
-    lv_chart_set_update_mode, lv_chart_type_t, lv_chart_update_mode_t, lv_draw_label,
+    lv_chart_set_update_mode, lv_chart_type_t, lv_chart_update_mode_t, lv_color16_t, lv_draw_label,
     lv_draw_label_dsc_init, lv_draw_label_dsc_t, lv_draw_rect, lv_draw_rect_dsc_init,
     lv_draw_rect_dsc_t, lv_event_code_t_LV_EVENT_DRAW_PART_BEGIN,
     lv_event_code_t_LV_EVENT_DRAW_PART_END, lv_event_code_t_LV_EVENT_VALUE_CHANGED,
@@ -26,13 +26,13 @@ use crate::{
     ui::vars::set_var_hist_det_day,
 };
 
+/// Draw the bar chart day labels
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn history_chart_draw_event_begin_cb(event: *mut lv_event_t) {
     unsafe {
         let dsc = *lv_event_get_draw_part_dsc(event);
 
         if dsc.part == LV_PART_TICKS {
-            // if dsc.id == LV_CHART_AXIS_PRIMARY_Y {
             if !dsc.label_dsc.is_null() {
                 (*dsc.label_dsc).opa = LV_OPA_COVER as _;
             }
@@ -41,6 +41,10 @@ pub unsafe extern "C" fn history_chart_draw_event_begin_cb(event: *mut lv_event_
             }
 
             if !dsc.text.is_null() && dsc.id == LV_CHART_AXIS_PRIMARY_X {
+                if !dsc.label_dsc.is_null() {
+                    (*dsc.label_dsc).color = lv_color16_t::default();
+                }
+
                 let day = if dsc.value == 0 {
                     "T".to_string()
                 } else if dsc.value == 1 {
@@ -60,6 +64,7 @@ pub unsafe extern "C" fn history_chart_draw_event_begin_cb(event: *mut lv_event_
     }
 }
 
+/// Draw the abs/float/bulk as stacked bars over the top of base bar which is total power.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn history_chart_draw_event_end_cb(event: *mut lv_event_t) {
     unsafe {
@@ -71,14 +76,14 @@ pub unsafe extern "C" fn history_chart_draw_event_end_cb(event: *mut lv_event_t)
                 if let Some(Some(history)) = history.get(dsc.id as usize) {
                     (history.abs_pct(), history.bulk_pct())
                 } else {
-                    return; //(0.0, 0.0)
+                    return;
                 }
             };
 
             let draw_area = *dsc.draw_area;
             info!("da {draw_area:?} av {abs_value} bv {bulk_value}");
 
-            // Absorbtion column
+            // Absorption column
             let height = draw_area.y2 - draw_area.y1;
 
             let mut abs_rect_dsc: lv_draw_rect_dsc_t = Default::default();
@@ -110,7 +115,7 @@ pub unsafe extern "C" fn history_chart_draw_event_end_cb(event: *mut lv_event_t)
 
             lv_draw_rect(dsc.draw_ctx, &bulk_rect_dsc, &bulk_area);
 
-            // Yield value label
+            // Yield value label - draw this last so that it will go over the last column
             let mut yield_label_dsc: lv_draw_label_dsc_t = Default::default();
             lv_draw_label_dsc_init(&mut yield_label_dsc);
 
@@ -134,6 +139,7 @@ pub unsafe extern "C" fn history_chart_draw_event_end_cb(event: *mut lv_event_t)
     }
 }
 
+/// Show the day details if a bar is pressed
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn history_chart_bar_pressed_cb(event: *mut lv_event_t) {
     unsafe {
@@ -145,8 +151,8 @@ pub unsafe extern "C" fn history_chart_bar_pressed_cb(event: *mut lv_event_t) {
     }
 }
 
-/// Create the history yield chart. This MUST be called while holding the lv lock
-pub unsafe fn create_hist_yield_chart() {
+/// Create the history yield bar and the pmax line charts. This MUST be called while holding the lv lock
+pub unsafe fn create_history_charts() {
     unsafe {
         let chart = objects.chart_history;
 
@@ -216,9 +222,79 @@ pub unsafe fn create_hist_yield_chart() {
             LV_CHART_AXIS_PRIMARY_Y as lv_chart_axis_t,
         );
         lv_chart_set_all_value(chart, series1, i16::MAX);
+
+        // Create the pmax line chart
+        create_hist_pmax_chart();
     }
 }
-pub fn update_history_chart(history: &[Option<HistoryDay>], lifetime: Option<&HistoryLifetime>) {
+
+/// The pmax line chart has it's opacity reduced because it 'covers'
+/// the bar chart but we want the labels to be full
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn history_chart_pmax_draw_event_begin_cb(event: *mut lv_event_t) {
+    unsafe {
+        let dsc = *lv_event_get_draw_part_dsc(event);
+
+        if dsc.part == LV_PART_TICKS {
+            if !dsc.label_dsc.is_null() {
+                (*dsc.label_dsc).opa = LV_OPA_COVER as _;
+            }
+            if !dsc.line_dsc.is_null() {
+                (*dsc.line_dsc).opa = LV_OPA_COVER as _;
+            }
+        }
+    }
+}
+/// Create the pmax chart. This MUST be called while holding the lv lock
+unsafe fn create_hist_pmax_chart() {
+    unsafe {
+        let chart = objects.chart_pmax;
+
+        lv_obj_set_style_width(chart, 0, LV_PART_INDICATOR);
+        lv_chart_set_type(chart, LV_CHART_TYPE_LINE as lv_chart_type_t);
+        lv_chart_set_update_mode(chart, LV_CHART_UPDATE_MODE_SHIFT as lv_chart_update_mode_t);
+        lv_chart_set_range(chart, LV_CHART_AXIS_SECONDARY_Y as lv_chart_axis_t, 0, 400);
+        lv_chart_set_axis_tick(
+            chart,
+            LV_CHART_AXIS_SECONDARY_Y as lv_chart_axis_t,
+            10,
+            5,
+            5,
+            5,
+            true,
+            40,
+        );
+        lv_chart_set_div_line_count(chart, 3, 0);
+        lv_obj_set_style_line_color(
+            chart,
+            lv_palette_main(lv_palette_t_LV_PALETTE_GREEN),
+            LV_PART_TICKS,
+        );
+        lv_obj_set_style_text_color(
+            chart,
+            lv_palette_main(lv_palette_t_LV_PALETTE_GREEN),
+            LV_PART_TICKS,
+        );
+
+        lv_obj_add_event_cb(
+            chart,
+            Some(history_chart_pmax_draw_event_begin_cb),
+            lv_event_code_t_LV_EVENT_DRAW_PART_BEGIN,
+            ptr::null_mut(),
+        );
+
+        lv_chart_set_point_count(chart, mppt::DAYS as _);
+        let series1 = lv_chart_add_series(
+            chart,
+            lv_palette_main(lv_palette_t_LV_PALETTE_GREEN),
+            LV_CHART_AXIS_SECONDARY_Y as lv_chart_axis_t,
+        );
+        lv_chart_set_all_value(chart, series1, i16::MAX);
+    }
+}
+
+/// Set the day bar and pmax line chart values, and the lifetime value
+pub fn update_history_charts(history: &[Option<HistoryDay>], lifetime: Option<&HistoryLifetime>) {
     unsafe {
         if lvgl_port_lock(-1) {
             let obj = objects.hist_det_lifetime;
@@ -269,6 +345,7 @@ pub fn update_history_chart(history: &[Option<HistoryDay>], lifetime: Option<&Hi
     }
 }
 
+/// Set all the history detail values for the clicked day bar
 pub unsafe fn history_details(history: &HistoryDay) {
     unsafe {
         if lvgl_port_lock(-1) {
@@ -381,68 +458,5 @@ pub unsafe fn history_details(history: &HistoryDay) {
 
             lvgl_port_unlock();
         }
-    }
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn history_chart_pmax_draw_event_begin_cb(event: *mut lv_event_t) {
-    unsafe {
-        let dsc = *lv_event_get_draw_part_dsc(event);
-
-        if dsc.part == LV_PART_TICKS {
-            if !dsc.label_dsc.is_null() {
-                (*dsc.label_dsc).opa = LV_OPA_COVER as _;
-            }
-            if !dsc.line_dsc.is_null() {
-                (*dsc.line_dsc).opa = LV_OPA_COVER as _;
-            }
-        }
-    }
-}
-/// Create the pmax chart. This MUST be called while holding the lv lock
-pub unsafe fn create_hist_pmax_chart() {
-    unsafe {
-        let chart = objects.chart_pmax;
-
-        lv_obj_set_style_width(chart, 0, LV_PART_INDICATOR);
-        lv_chart_set_type(chart, LV_CHART_TYPE_LINE as lv_chart_type_t);
-        lv_chart_set_update_mode(chart, LV_CHART_UPDATE_MODE_SHIFT as lv_chart_update_mode_t);
-        lv_chart_set_range(chart, LV_CHART_AXIS_SECONDARY_Y as lv_chart_axis_t, 0, 400);
-        lv_chart_set_axis_tick(
-            chart,
-            LV_CHART_AXIS_SECONDARY_Y as lv_chart_axis_t,
-            10,
-            5,
-            5,
-            5,
-            true,
-            40,
-        );
-        lv_chart_set_div_line_count(chart, 3, 0);
-        lv_obj_set_style_line_color(
-            chart,
-            lv_palette_main(lv_palette_t_LV_PALETTE_GREEN),
-            LV_PART_TICKS,
-        );
-        lv_obj_set_style_text_color(
-            chart,
-            lv_palette_main(lv_palette_t_LV_PALETTE_GREEN),
-            LV_PART_TICKS,
-        );
-
-        lv_obj_add_event_cb(
-            chart,
-            Some(history_chart_pmax_draw_event_begin_cb),
-            lv_event_code_t_LV_EVENT_DRAW_PART_BEGIN,
-            ptr::null_mut(),
-        );
-
-        lv_chart_set_point_count(chart, mppt::DAYS as _);
-        let series1 = lv_chart_add_series(
-            chart,
-            lv_palette_main(lv_palette_t_LV_PALETTE_GREEN),
-            LV_CHART_AXIS_SECONDARY_Y as lv_chart_axis_t,
-        );
-        lv_chart_set_all_value(chart, series1, i16::MAX);
     }
 }

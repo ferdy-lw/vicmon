@@ -1,6 +1,6 @@
 #include "images.h"
 
-const ext_img_desc_t images[10] = {
+const ext_img_desc_t images[12] = {
     { "batt_60", &img_batt_60 },
     { "batt_80", &img_batt_80 },
     { "batt_90", &img_batt_90 },
@@ -11,4 +11,6 @@ const ext_img_desc_t images[10] = {
     { "solar", &img_solar },
     { "sun", &img_sun },
     { "settings", &img_settings },
+    { "bars", &img_bars },
+    { "reload", &img_reload },
 };

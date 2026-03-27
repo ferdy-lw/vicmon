@@ -1,5 +1,4 @@
 #![feature(atomic_try_update)]
-#![feature(duration_constructors_lite)]
 #![feature(lazy_get)]
 
 use std::sync::Arc;
@@ -33,7 +32,7 @@ use http::server::HttpServer;
 use wifi::Wifi;
 
 use crate::devices::DEVICES;
-use crate::ui::history::{create_hist_pmax_chart, create_hist_yield_chart};
+use crate::ui::history::create_history_charts;
 use crate::ui::ui::{setup_backlight, subscribe_ui_events};
 
 fn main() -> Result<()> {
@@ -91,8 +90,7 @@ fn main() -> Result<()> {
             ui_init();
             info!("UI init");
 
-            create_hist_yield_chart();
-            create_hist_pmax_chart();
+            create_history_charts();
 
             subscribe_ui_events(&sys_loop, client.clone(), wifi)?;
             info!("UI event subscriptions initialized");
