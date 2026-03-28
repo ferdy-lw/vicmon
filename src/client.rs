@@ -92,7 +92,7 @@ pub struct Client {
 
 impl Client {
     pub fn new(gap: VicEspBleGap, gattc: VicEspGattc) -> Self {
-        let (tx, rx) = sync_channel(2);
+        let (tx, rx) = sync_channel(4);
 
         let _ = thread::Builder::new()
             .name("adv_decoder".to_owned())
