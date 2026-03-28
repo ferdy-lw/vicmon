@@ -1,3 +1,7 @@
+/// MPPT protocol, most responses are VE.direct registers
+/// Register details: https://www.victronenergy.com/upload/documents/BlueSolar-HEX-protocol.pdf
+///
+/// NOTE: Bytes are little endian, i.e. in data: 79 06 is 0x0679 = 1657 (at 0.01v == 16.57v)
 use core::option::Option;
 use std::{
     fmt::Display,
@@ -17,8 +21,84 @@ use esp_idf_svc::{
 };
 
 use super::*;
+use std::string::ToString;
+use strum::{self, FromRepr};
 
 use crate::ui::history::update_history_charts;
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, FromRepr, strum::Display)]
+#[repr(u8)]
+pub enum MpptError {
+    #[default]
+    #[strum(to_string = "")]
+    None = 0,
+    #[strum(to_string = "Battery voltage too high")]
+    BatVoltHigh = 2,
+    #[strum(to_string = "Battery temperature sensor issue 3")]
+    BatTempSensor3 = 3,
+    #[strum(to_string = "Battery temperature sensor issue 4 ")]
+    BatTempSensor4 = 4,
+    #[strum(to_string = "Battery temperature sensor issue 5")]
+    BatTempSensor5 = 5,
+    #[strum(to_string = "Battery voltage sensor issue 6")]
+    BattVoltSensor6 = 6,
+    #[strum(to_string = "Battery voltage sensor issue 7")]
+    BattVoltSensor7 = 7,
+    #[strum(to_string = "Battery voltage sensor issue 8")]
+    BattVoltSensor8 = 8,
+    #[strum(to_string = "Battery temperature too low (charging not allowed)")]
+    BattTempLow = 14,
+    #[strum(to_string = "Charger internal temperature too high")]
+    ChargerTempHigh = 17,
+    #[strum(to_string = "Charger excessive output current")]
+    ChargerExcessiveOutCurrent = 18,
+    #[strum(to_string = "Charger current polarity reversed")]
+    ChargerCurrentPolarityReversed = 19,
+    #[strum(to_string = "Charger bulk time expired (when 10 hour bulk time protection active)")]
+    ChargerBulkTimeExpired = 20,
+    #[strum(
+        to_string = "Charger current sensor issue (bias not within expected limits during off state)"
+    )]
+    ChargerCurrentSensor = 21,
+    #[strum(to_string = "Charger internal temperature sensor issue 22")]
+    ChargerTempSensor22 = 22,
+    #[strum(to_string = "Charger internal temperature sensor issue 23")]
+    ChargerTempSensor23 = 23,
+    #[strum(to_string = "Charger terminals overheated")]
+    ChargerTerminalsOverheated = 26,
+    #[strum(to_string = "Charger short-circuit")]
+    ChargerShortCircuit = 27,
+    #[strum(
+        to_string = "Converter issue (dual converter models, one of the converters is not working)"
+    )]
+    ConverterIssue = 28,
+    #[strum(to_string = "Battery over-charge protection")]
+    BatteryOverChargeProtection = 29,
+    #[strum(to_string = "Input voltage too high")]
+    InputVoltageTooHight = 33,
+    #[strum(to_string = "Input excessive current")]
+    InputExcessiveCurrent = 34,
+    #[strum(to_string = "Input shutdown (due to excessive battery voltage)")]
+    InputShutdownExcessiveBattVoltage = 38,
+    #[strum(to_string = "Input shutdown (current flowing while the converter is switched off)")]
+    InputShutdownCurrentWhenConverterOff = 39,
+    #[strum(to_string = "Incompatible device in the network (for synchronized charging)")]
+    IncompatibleDevice = 66,
+    #[strum(to_string = "BMS connection lost")]
+    BmsConnectionLost = 67,
+    #[strum(to_string = "Network misconfigured (e.g. combining ESS with ve.smart networking)")]
+    NetworkMisconfigured = 68,
+    #[strum(to_string = "Calibration data lost")]
+    CalibrationDataLost = 116,
+    #[strum(to_string = "Incompatible firmware (i.e. not for this model)")]
+    IncompatibleFirmware = 117,
+    #[strum(
+        to_string = "Settings data invalid / corrupted (use restore to defaults and reset to recover)"
+    )]
+    SettingsDataInvalid = 119,
+    #[strum(to_string = "Uknown error: {0}")]
+    Uknown(u8) = 255,
+}
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct HistoryDay {
@@ -31,22 +111,76 @@ pub struct HistoryDay {
     pub float: Duration,
     pub abs: Duration,
     pub bulk: Duration,
-    pub errors: u8,
+    pub errors: MpptError,
 }
 
 impl HistoryDay {
+    /// | Bytes | Description | scale | type | unit |
+    /// | :--- | :--- | :--- | :--- | :--- |
+    /// |0 | Reserved (=0) | | | un8 | |
+    /// |1 | Yield | 0.01 | un32 | kWh |
+    /// |5 | Consumed (na if no load=0XFF..) | 0.01 | un32 | kWh |
+    /// |9 | Battery voltage maximum | 0.01 | un16 | V |
+    /// |11 | Battery voltage minimum | 0.01 | un16 | V |
+    /// |13 | Err Database | | | un8 | |
+    /// |14 | Err 0 most recent | | | un8 | |
+    /// |15 | Err 1 | | | un8 | |
+    /// |16 | Err 2 | | | un8 | |
+    /// |17 | Err 3 oldest | | | un8 | |
+    /// |18 | Time bulk | 1 | un16 | sec |
+    /// |20 | Time absorption | 1 | un16 | sec |
+    /// |22 | Time float | 1 | un16 | sec |
+    /// |24 | Power maximum | 1 | un32 | W |
+    /// |28 | Battery current maximum | 0.1 | un16 | A |
+    /// |30 | Panel voltage maximum | 0.01 | un16 | V |
+    /// |32 | Day sequence number (no data yet =0x04) | | un16 | |
+    ///
+    /// Errors
+    ///
+    /// | Error |  Meaning |
+    /// | :--- | :--- |
+    /// |0 | No error |
+    /// |2 | Battery voltage too high|
+    /// |3..5 | Battery temperature sensor issue|
+    /// |6..8 | Battery voltage sensor issue|
+    /// |14 | Battery temperature too low (charging not allowed)|
+    /// |17 | Charger internal temperature too high|
+    /// |18 | Charger excessive output current|
+    /// |19 | Charger current polarity reversed|
+    /// |20 | Charger bulk time expired (when 10 hour bulk time protection active)|
+    /// |21 | Charger current sensor issue (bias not within expected limits during off state)|
+    /// |22,23 | Charger internal temperature sensor issue|
+    /// |26 | Charger terminals overheated|
+    /// |27 | Charger short-circuit|
+    /// |28 | Converter issue (dual converter models, one of the converters is not working)|
+    /// |29 | Battery over-charge protection|
+    /// |33 | Input voltage too high|
+    /// |34 | Input excessive current|
+    /// |38 | Input shutdown (due to excessive battery voltage)|
+    /// |39 | Input shutdown (current flowing while the converter is switched off)|
+    /// |66 | Incompatible device in the network (for synchronized charging)|
+    /// |67 | BMS connection lost|
+    /// |68 | Network misconfigured (e.g. combining ESS with ve.smart networking)|
+    /// |116 | Calibration data lost|
+    /// |117 | Incompatible firmware (i.e. not for this model)|
+    /// |119 | Settings data invalid / corrupted (use restore to defaults and reset to recover)|
     pub fn from_raw(day: u8, bytes: &[u8]) -> Self {
+        // Example
         // 0000   |data 08| |source 03 |2byte cmd 19 |id 10 51| |type arr? 58  |num bytes 22
-        // |err? 00 | yield 4c 00 00  00| ff ff ff ff
-        // 0010   |bmx a3 05| |bmn f7 04| 00 00 00 00 00 |blk 4c 01| |abs 05 00| |flt 61 01| |pmx 04
-        // 0020   01 00 00 | ba 00 |vmx 67 12| fc 00
+        // |rsv 00 |yield 4c 00 00  00 |cons ff ff ff ff
+        // |bmx a3 05| |bmn f7 04|edb 00| |e0 00 |e1 00 |e2 00 |e3 00 |blk 4c 01| |abs 05 00| |flt 61 01|
+        // |pmx 04 01 00 00 |bamx 00 |panvmx 67 12 |day fc 00
 
-        let errors = bytes[0]; //u8::from_le_bytes(bytes[0].try_into().unwrap()); // maybe error?
         let yield_ = u32::from_le_bytes(bytes[1..=4].try_into().unwrap()) * 10; // wh (yield is in .01kwh units)
-        // 5..==8 ?
+        // consumed: 5..==8
         let bat_max = u16::from_le_bytes(bytes[9..=10].try_into().unwrap()) as f32 * 0.01; // v (bmx is in .01v units)
         let bat_min = u16::from_le_bytes(bytes[11..=12].try_into().unwrap()) as f32 * 0.01; // v (bmn is in .01v units)
-        // 13..=17 ?
+        // error DB: 13
+        let error = bytes[14];
+        let errors = MpptError::from_repr(error).unwrap_or(MpptError::Uknown(error));
+        // error 1: 15
+        // error 2: 16
+        // error 3: 17
         let bulk =
             Duration::from_mins(u16::from_le_bytes(bytes[18..=19].try_into().unwrap()) as u64);
         let abs =
@@ -54,8 +188,9 @@ impl HistoryDay {
         let float =
             Duration::from_mins(u16::from_le_bytes(bytes[22..=23].try_into().unwrap()) as u64);
         let p_max = u32::from_le_bytes(bytes[24..=27].try_into().unwrap()); // w
-        // 28..=29 ?
+        // batt current max: 28..=29
         let v_max = u16::from_le_bytes(bytes[30..=31].try_into().unwrap()) as f32 * 0.01; // v (vmx is in .01v units)
+        // day: 32..=33
 
         Self {
             day,
@@ -97,15 +232,29 @@ pub struct HistoryLifetime {
 }
 
 impl HistoryLifetime {
+    /// | Bytes | Description | scale | type | unit |
+    /// | :--- | :--- | :--- | :--- | :--- |
+    /// |0 | Reserved (=1 firmware 1.17+) | | | un8 | |
+    /// |1 | Err databaes (=0) | | | un8 | |
+    /// |2 | Err 0 most recent | | | un8 | |
+    /// |3 | Err 1 | | | un8 | |
+    /// |4 | Err 2 | | | un8 | |
+    /// |5 | Err 3 oldest | | | un8 | |
+    /// |6 | Total yield (user resettable) | 0.01 | un32 | kWh |
+    /// |10 | Total yield (system) | 0.01 | un32 | kWh |
+    /// |14 | Panel voltage maximum | 0.01 | un16 | V |
+    /// |16 | Battery voltage maximum | 0.01 | un16 | V |
+    /// |18 | Num days available | | un8 | |
+    /// |19 | Battery voltage minimum | 0.01 | un16 | V |
+    /// |21 | 13 reserved bytes (=0xFF) | | un8 | |
     pub fn from_raw(bytes: &[u8]) -> Self {
-        // 0000   |data 08| |source 03 |2byte cmd 19 |id 10 4f| |type arr? 58| |num bytes 22
-        // |err? 01| |?00 00 00 00 |?00 |lftm b5 03 01
-        // 0010   00| |lftm since rst b5 03 01 00| ae 13 79 06 1e 00 00 ff ff ff ff
-        // 0020   ff ff ff ff ff ff ff ff ff
+        // Example:
+        // |rsv 01 | 00 00 00 00 00 |lftm usr b5 03 01 00
+        // |lftm sys b5 03 01 00| pnl vmax ae 13 | batt vmax 79 06 | num days 1e | batt min 00 00|
+        // |rsv ff ff ff ff ff ff ff ff ff ff ff ff ff
 
-        // NOTE: these may be the wrong way around?
-        let lifetime_yield = u32::from_le_bytes(bytes[6..=9].try_into().unwrap()) * 10; // wh (yield is in .01kwh units)
-        let yield_since_reset = u32::from_le_bytes(bytes[10..=13].try_into().unwrap()) * 10; // wh (yield is in .01kwh units)
+        let yield_since_reset = u32::from_le_bytes(bytes[6..=9].try_into().unwrap()) * 10; // wh (yield is in .01kwh units)
+        let lifetime_yield = u32::from_le_bytes(bytes[10..=13].try_into().unwrap()) * 10; // wh (yield is in .01kwh units)
 
         Self {
             lifetime_yield,
@@ -156,8 +305,13 @@ static START_CTL_FLOW_1: &[u8] = &[0xfa, 0x80, 0xff];
 static START_CTL_FLOW_2: &[u8] = &[0xf9, 0x80];
 static COMMAND_REQUEST_BEGIN: &[u8] = &[0x01];
 static COMMAND_REQUEST_TYPE_3: &[u8] = &[0x03, 0x03];
+
+// History data registers all start with 0x10..
+// 0x104F - Total History
+// 0x1050..=0x106E Daily History (0x1050=today, 0x1051-yesterday..)(If there is no data then flag position is set to 0x04)
+// 0x10A0..=0x10BE Daily MPPT history (0x10A0=today, 0x10A1-yesterday..)(If there is no data then flag position is set to 0x04)
 const HISTORY_LIFETIME_COMMAND: u8 = 0x4F; // This is the 'day' part of a history command that indicates lifetime data
-const HISTORY_DAY_0_COMMAND: u8 = 0x50; // Day 0 is 0x50, 1 is 0x51 ...
+const HISTORY_DAY_0_COMMAND: u8 = 0x50; // Day 0 is 0x50, -1 is 0x51 ...
 pub const DAYS: usize = 14;
 const HISTORY_REQUEST_PREFIX: [u8; 5] = [0x05, 0x03, 0x81, 0x19, 0x10]; // command starts with this and ends with a 0x50+day_num up to 4f
 const HISTORY_REQUEST_PREFIX_LEN: usize = HISTORY_REQUEST_PREFIX.len();

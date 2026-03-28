@@ -23,7 +23,7 @@ use esp_idf_svc::{
     },
 };
 use log::{error, info};
-use num_enum::TryFromPrimitive;
+use strum::FromRepr;
 
 use crate::{
     client::Client,
@@ -115,7 +115,7 @@ fn turn_backlight_on(on: bool) -> bool {
     on
 }
 
-#[derive(Copy, Clone, Debug, TryFromPrimitive)]
+#[derive(Copy, Clone, Debug, FromRepr)]
 #[repr(u8)]
 pub enum UiObject {
     WifiBtn,
@@ -225,11 +225,9 @@ pub unsafe fn subscribe_ui_events(
 pub unsafe extern "C" fn lv_event_to_sys_loop_cb(e: *mut lv_event_t) {
     let code: lv_event_code_t = unsafe { lv_event_get_code(e) };
     if code == lv_event_code_t_LV_EVENT_PRESSED {
-        let ui_object: UiObject = unsafe {
-            (*(lv_event_get_user_data(e) as *mut u8))
-                .try_into()
-                .unwrap()
-        };
+        let ui_object: UiObject =
+            UiObject::from_repr(unsafe { *(lv_event_get_user_data(e) as *mut u8) })
+                .unwrap_or(UiObject::MainScreen);
 
         let event = UiEvent::Pressed(ui_object);
 

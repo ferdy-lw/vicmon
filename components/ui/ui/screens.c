@@ -1605,7 +1605,7 @@ void create_screen_history() {
                     lv_obj_t *obj = lv_label_create(parent_obj);
                     objects.hist_det_errors = obj;
                     lv_obj_set_pos(obj, 90, 378);
-                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                    lv_obj_set_size(obj, 280, 36);
                     lv_obj_set_style_text_font(obj, &ui_font_roboto_med_48, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_label_set_text(obj, "-");
                 }

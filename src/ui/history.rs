@@ -19,10 +19,10 @@ use esp_idf_svc::sys::lcd_bindings::{
     lv_palette_t_LV_PALETTE_YELLOW, lv_snprintf, lvgl_port_lock, lvgl_port_unlock, objects,
     ui_font_roboto_reg_14,
 };
-use log::info;
+// use log::info;
 
 use crate::{
-    client::mppt::{self, DAYS, HistoryDay, HistoryLifetime},
+    client::mppt::{self, DAYS, HistoryDay, HistoryLifetime, MpptError},
     ui::vars::set_var_hist_det_day,
 };
 
@@ -71,17 +71,21 @@ pub unsafe extern "C" fn history_chart_draw_event_end_cb(event: *mut lv_event_t)
         let dsc = *lv_event_get_draw_part_dsc(event);
 
         if dsc.part == LV_PART_ITEMS {
-            let (abs_value, bulk_value) = {
+            let (abs_value, bulk_value, is_error) = {
                 let history = &mppt::HISTORY.read().unwrap().history;
                 if let Some(Some(history)) = history.get(dsc.id as usize) {
-                    (history.abs_pct(), history.bulk_pct())
+                    (
+                        history.abs_pct(),
+                        history.bulk_pct(),
+                        history.errors != MpptError::None,
+                    )
                 } else {
                     return;
                 }
             };
 
             let draw_area = *dsc.draw_area;
-            info!("da {draw_area:?} av {abs_value} bv {bulk_value}");
+            // info!("da {draw_area:?} av {abs_value} bv {bulk_value}");
 
             // Absorption column
             let height = draw_area.y2 - draw_area.y1;
@@ -104,7 +108,11 @@ pub unsafe extern "C" fn history_chart_draw_event_end_cb(event: *mut lv_event_t)
             let mut bulk_rect_dsc: lv_draw_rect_dsc_t = Default::default();
             lv_draw_rect_dsc_init(&mut bulk_rect_dsc);
 
-            bulk_rect_dsc.bg_color = lv_palette_main(lv_palette_t_LV_PALETTE_BLUE);
+            bulk_rect_dsc.bg_color = lv_palette_main(if is_error {
+                lv_palette_t_LV_PALETTE_RED
+            } else {
+                lv_palette_t_LV_PALETTE_BLUE
+            });
 
             let bulk_area = lv_area_t {
                 x1: draw_area.x1,
@@ -449,7 +457,7 @@ pub unsafe fn history_details(history: &HistoryDay) {
             let obj = objects.hist_det_errors;
             lv_label_set_text(
                 obj,
-                if history.errors == 0 {
+                if history.errors == MpptError::None {
                     c"-".as_ptr()
                 } else {
                     CString::new(history.errors.to_string()).unwrap().as_ptr()
