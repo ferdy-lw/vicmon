@@ -108,6 +108,7 @@ pub struct HistoryDay {
     pub v_max: f32,
     pub bat_max: f32,
     pub bat_min: f32,
+    pub bat_amax: f32,
     pub float: Duration,
     pub abs: Duration,
     pub bulk: Duration,
@@ -169,7 +170,7 @@ impl HistoryDay {
         // 0000   |data 08| |source 03 |2byte cmd 19 |id 10 51| |type arr? 58  |num bytes 22
         // |rsv 00 |yield 4c 00 00  00 |cons ff ff ff ff
         // |bmx a3 05| |bmn f7 04|edb 00| |e0 00 |e1 00 |e2 00 |e3 00 |blk 4c 01| |abs 05 00| |flt 61 01|
-        // |pmx 04 01 00 00 |bamx 00 |panvmx 67 12 |day fc 00
+        // |pmx 04 01 00 00 |bamx ba 00 |panvmx 67 12 |day fc 00
 
         let yield_ = u32::from_le_bytes(bytes[1..=4].try_into().unwrap()) * 10; // wh (yield is in .01kwh units)
         // consumed: 5..==8
@@ -188,7 +189,7 @@ impl HistoryDay {
         let float =
             Duration::from_mins(u16::from_le_bytes(bytes[22..=23].try_into().unwrap()) as u64);
         let p_max = u32::from_le_bytes(bytes[24..=27].try_into().unwrap()); // w
-        // batt current max: 28..=29
+        let bat_amax = u16::from_le_bytes(bytes[28..=29].try_into().unwrap()) as f32 * 0.1; // a (bamx is in .1a units)
         let v_max = u16::from_le_bytes(bytes[30..=31].try_into().unwrap()) as f32 * 0.01; // v (vmx is in .01v units)
         // day: 32..=33
 
@@ -199,6 +200,7 @@ impl HistoryDay {
             v_max,
             bat_max,
             bat_min,
+            bat_amax,
             float,
             abs,
             bulk,

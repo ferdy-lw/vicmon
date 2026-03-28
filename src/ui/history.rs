@@ -454,11 +454,19 @@ pub unsafe fn history_details(history: &HistoryDay) {
                     .as_ptr(),
             );
 
+            let obj = objects.hist_det_bat_amax;
+            lv_label_set_text(
+                obj,
+                CString::new(format!("{:.1}", history.bat_amax))
+                    .unwrap()
+                    .as_ptr(),
+            );
+
             let obj = objects.hist_det_errors;
             lv_label_set_text(
                 obj,
                 if history.errors == MpptError::None {
-                    c"-".as_ptr()
+                    c"".as_ptr()
                 } else {
                     CString::new(history.errors.to_string()).unwrap().as_ptr()
                 },

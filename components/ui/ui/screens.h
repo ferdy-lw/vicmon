@@ -74,6 +74,7 @@ typedef struct _objects_t {
     lv_obj_t *obj22;
     lv_obj_t *hist_det_bat_max;
     lv_obj_t *hist_det_bat_min;
+    lv_obj_t *hist_det_bat_amax;
     lv_obj_t *obj23;
     lv_obj_t *hist_det_errors;
     lv_obj_t *obj24;
