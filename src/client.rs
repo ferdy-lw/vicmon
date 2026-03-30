@@ -55,9 +55,6 @@ const LONG_REQUEST_CHARACTERISITIC_UUID: BtUuid =
 // Client Characteristic Configuration UUID
 pub const CLIENT_CONFIGURATION_DESCRIPTOR_UUID: BtUuid = BtUuid::uuid16(0x2902);
 
-// const TURN_ON_INVERTER: [u8; 8] = [0x06, 0x03, 0x82, 0x19, 0x02, 0x00, 0x41, 0x03];
-// const TURN_OFF_INVERTER: [u8; 8] = [0x06, 0x03, 0x82, 0x19, 0x02, 0x00, 0x41, 0x04];
-
 static DEBOUNCE_INV_SWITCH: RwLock<Option<Instant>> = RwLock::new(None);
 
 struct ScanData {
