@@ -90,47 +90,18 @@ Victron devices so it wasn't very useful here.
 
 ## Service UUID: 306B0001B081403783DCE59FCC3CDFD0
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 8d2b816 (Add docs)
-=======
->>>>>>> refs/remotes/origin/main
-| UUID | Description |
-| --- | --- |
-| 306B0002B081403783DCE59FCC3CDFD0 | Flow Control (FC) Characterisitic |
-| 306B0003B081403783DCE59FCC3CDFD0 | Command (C) Characterisitic |
-| 306B0004B081403783DCE59FCC3CDFD0 | Long Command (LC) Characterisitic |
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
 | Characteristic UUID | Description |
 | --- | --- |
-| 306B0002B081403783DCE59FCC3CDFD0 | Flow Control (FC) Characterisitic (VictronConnect App handle: 21) |
-| 306B0003B081403783DCE59FCC3CDFD0 | Command (C) Characterisitic (VictronConnect App handle: 24) |
-| 306B0004B081403783DCE59FCC3CDFD0 | Long Command (LC) Characterisitic (VictronConnect App handle: 27) |
->>>>>>> c38c5aa (Add docs)
->>>>>>> 8d2b816 (Add docs)
-=======
->>>>>>> refs/remotes/origin/main
+| 306B0002B081403783DCE59FCC3CDFD0 | Flow Control (FC) Characterisitic (Victron App handle: 21) |
+| 306B0003B081403783DCE59FCC3CDFD0 | Command (C) Characterisitic (Victron App handle: 24) |
+| 306B0004B081403783DCE59FCC3CDFD0 | Long Command (LC) Characterisitic (Victron App handle: 27) |
 
 Each characterisitic has a Client Characterisitic Configuration descriptor (CCCD), UUID 2902, that
 needs to be notified by gattc registering for notify on the characterisitic and writing 1 to the descriptor.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-=======
 The VictronConnect App service, characteristic and descriptor handles are different than the handles the esp32 gets, so
 you should always use the ble api's to get the handles.
 
->>>>>>> c38c5aa (Add docs)
->>>>>>> 8d2b816 (Add docs)
-=======
->>>>>>> refs/remotes/origin/main
 ## MTU
 
 The mtu looks to be limited to 77 bytes, even if a larger one is requested. This means characteristic writes 
@@ -220,44 +191,14 @@ To request a history day 0 register (0x1050) the full sequence is 0x050381191050
 will be 0x08031910505822xxxx... where xxxx are the register payload. To break these down...
 
 ### 0x050381191050 - read history day 0 register
-<<<<<<< HEAD
-<<<<<<< HEAD
-- 05 read request type (read)
-- 03 class? standard register? 01 for product?
-- 81 read? 82 on 06 request type - write?
-=======
-<<<<<<< HEAD
-- 05 read request type (read)
-- 03 class? standard register? 01 for product?
-- 81 read? 82 on 06 request type - write?
-=======
 - 05 command request type (read)
-- 03 class? standard register? 01 for product?
+- 03 class or group?
 - 81 register operation (read)
->>>>>>> c38c5aa (Add docs)
->>>>>>> 8d2b816 (Add docs)
-=======
-- 05 read request type (read)
-- 03 class? standard register? 01 for product?
-- 81 read? 82 on 06 request type - write?
->>>>>>> refs/remotes/origin/main
 - 19 register ID byte count (2)
 - 1050 register ID (day 0)
 
 ### 0x08031910505822xxxx - value history day 0 register
-<<<<<<< HEAD
-<<<<<<< HEAD
-- 08 read response type (data typed)
-=======
-<<<<<<< HEAD
-- 08 read response type (data typed)
-=======
 - 08 command response type (data typed)
->>>>>>> c38c5aa (Add docs)
->>>>>>> 8d2b816 (Add docs)
-=======
-- 08 read response type (data typed)
->>>>>>> refs/remotes/origin/main
 - 03 class? standard register?
 - 19 register ID byte count (2)
 - 1050 register ID (day 0)
@@ -265,80 +206,26 @@ will be 0x08031910505822xxxx... where xxxx are the register payload. To break th
 - 22 bytes in payload (34 bytes)
 
 ### 0x0603821902004103 - write inverter ON mode
-<<<<<<< HEAD
-<<<<<<< HEAD
-- 06 write request type (write)
-- 03 standard register
-- 82 write?
-=======
-<<<<<<< HEAD
-- 06 write request type (write)
-- 03 standard register
-- 82 write?
-=======
 - 06 command request type (write)
 - 03 standard register
 - 82 register operation (write)
->>>>>>> c38c5aa (Add docs)
->>>>>>> 8d2b816 (Add docs)
-=======
-- 06 write request type (write)
-- 03 standard register
-- 82 write?
->>>>>>> refs/remotes/origin/main
 - 19 register ID byte count (2)
 - 0200 register ID (controlling device mode - inverter mode)
 - 41 data type (un8)
 - 03 write data value (03 On)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-## Request Type
-
-What are we doing to the register.
-=======
-<<<<<<< HEAD
-## Request Type
-
-What are we doing to the register.
-=======
 ## Command, request Type
 
 Command operation, used when writing to command characterisitics
->>>>>>> c38c5aa (Add docs)
->>>>>>> 8d2b816 (Add docs)
-=======
-## Request Type
-
-What are we doing to the register.
->>>>>>> refs/remotes/origin/main
 
 | Hex | Description |
 | --- | --- |
 | 05 | read |
 | 06 | write |
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-## Response Type
-
-How is the register value determined, for reading values.
-=======
-<<<<<<< HEAD
-## Response Type
-
-How is the register value determined, for reading values.
-=======
 ## Command, response Type
 
 Command operation, used in command notify responses. How is the register value determined, for reading values.
->>>>>>> c38c5aa (Add docs)
->>>>>>> 8d2b816 (Add docs)
-=======
-## Response Type
-
-How is the register value determined, for reading values.
->>>>>>> refs/remotes/origin/main
 
 | Hex | Description |
 | --- | --- |
